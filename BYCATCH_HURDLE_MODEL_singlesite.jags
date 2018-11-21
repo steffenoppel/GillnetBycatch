@@ -1,0 +1,66 @@
+
+
+
+model{
+  
+  # PRIORS FOR REGRESSION PARAMETERS
+  intercept.occu ~ dnorm(0, 0.01) 
+  intercept.abund ~ dnorm(0, 0.01)
+  treat.occu ~ dnorm(0, 0.01)
+  treat.abund ~ dnorm(0, 0.01)
+
+
+  # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
+    for(t in 1:ntrips){
+      occ.trip[t]~dnorm(0,tau.trip)    ## trip-specific random effect for occurrence
+      abund.trip[t]~dnorm(0,tau.trip)    ## trip-specific random effect for abundance
+    }
+    tau.trip<-1/(sigma.trip*sigma.trip)
+    sigma.trip~dunif(0,10)
+    
+
+
+  # LOOP OVER  every observation
+  for(i in 1:N){
+    
+    # define the logistic regression model, where psi is the probability of bycatch occurring at all
+    logit(psi[i]) <- intercept.occu + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    z[i]~dbern(psi[i])
+    
+    # define the poisson regression model for abundance and multiply with bycatch probability
+    y[i] ~ dpois(phi[i])
+    phi[i]<-lambda[i]*psi[i] ### changed from z[i] when introducing z as data
+    log(lambda[i])<- log(eff[i]) + intercept.abund + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+    
+  } ## end loop over each observation
+
+
+  ### INSERT MODEL SELECTION COEFFICIENTS
+  w1~dbern(0.5)
+  w2~dbern(0.5)
+
+
+# # Computation of fit statistic (Bayesian p-value)
+# # Fit statistic for observed data
+
+  for(i in 1:N){
+
+      # Actual data
+      sd.resi[i]<-sqrt(phi[i]*(1-psi[i])) +0.5
+      E[i]<-(y[i]-phi[i])/ sd.resi[i]
+      E2[i] <- pow(E[i],2)
+
+      # Replicate data
+      M.new[i]~dpois(phi[i])
+      E.new[i]<-(M.new[i]-phi[i])/sd.resi[i]
+      E2.new[i] <- pow(E.new[i], 2)
+      }
+
+fit <- sum(E2[])# Sum up squared residuals for actual data set
+fit.new <- sum(E2.new[]) # Sum up for replicate data sets
+
+
+  
+} ## end model
+
+

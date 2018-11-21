@@ -1,0 +1,338 @@
+---
+title: "Sea duck bycatch mitigation trials in the baltic Sea"
+author: "Steffen Oppel, Rob Field"
+date: "20 November 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE,error=FALSE,message=FALSE)
+```
+
+## Analysis of mitigation trials
+
+The goal of this analysis is to test whether the trials of black-and white netpanels, white flashing lights, and green lights reduced seabird bycatch and kept target fish catch constant.
+<br>
+First, we will take a look at the raw data to see how many trials were performed:
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+summarytab<- ALLDAT %>% mutate(count=1) %>%
+  mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%
+  gather(key="Target", value="Catch",BPUE) %>%
+  group_by(Treatment,Mitigation) %>%
+  summarise(N=sum(count), catch=mean(Catch, na.rm=T), lcl=min(0,mean(Catch, na.rm=T)-0.5*sd(Catch, na.rm=T)), ucl=mean(Catch, na.rm=T)+0.5*sd(Catch, na.rm=T)) %>%
+  arrange(Mitigation,Treatment)
+  
+
+kable(summarytab[,c(2,1,3)], caption="Number of individual trials for each mitigation method",col.names=  c("Mitigation Method","Treatment or Control", "N trials"))
+```
+
+<br>
+Now we take a look at the raw catch data and their standard deviation for each of the mitigation methods:
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE, fig.height = 8, fig.width = 6}
+
+ALLDAT %>%
+  mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%
+  gather(key="Target", value="Catch",BPUE,CPUE) %>%
+  mutate(Target=ifelse(Target=="CPUE","Fish catch","Bird bycatch")) %>%
+  group_by(Treatment,Target,Mitigation) %>%
+  summarise(catch=mean(Catch, na.rm=T), lcl=min(0,mean(Catch, na.rm=T)-0.5*sd(Catch, na.rm=T)), ucl=mean(Catch, na.rm=T)+0.5*sd(Catch, na.rm=T)) %>%
+
+  ggplot(aes(y=catch, x=Treatment)) + geom_point(size=2)+
+  geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
+  #facet_grid(Mitigation ~ Target,scales='free_y', shrink = TRUE)+      ## does not allow free y scales within rows
+  facet_wrap(~Mitigation + Target,ncol=2,scales='free_y')+
+  xlab("Fishing net category") +
+  ylab("Caught animals per unit effort") +
+  theme(panel.background=element_rect(fill="white", colour="black"),
+        axis.text=element_text(size=18, color="black"),
+        axis.title=element_text(size=20),
+        strip.text.x=element_text(size=18, color="black"),
+        strip.background=element_rect(fill="white", colour="black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())
+```
+
+<br>
+<br>
+
+## Simple paired Wilcoxon signed rank test
+
+Following Mangel et al. (2018) we first test whether bycatch and catch differed between the paired control and treatment sets. We can do this given our fairly robust design of paired trials where each treatment net was paired with a control net at the same time and location on the same fishing trip.
+<br>
+We eliminated all un-paired sets and tested whether the following response variables differed between the experimental and control nets: N of bycaught birds, N of bycaught LTDU, Bycatch per unit effort, Fish catch per unit effort. The following table shows the p-values of all these comparisons. Note, these p-values have been adjusted for multiple tests using the procedure by Benjamini and Hochberg (1995). Because we are using rank tests, there is no need to perform these tests on a subset of data (only trips that actually caught ducks) because the inclusion of excess zeroes does not affect this test statistic at all.
+
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+pairedtestsummary<-expand.grid(Response=c("TotalN","LTDU","BPUE","CPUE"), Mitigation=c("NetPanels","WhiteLights","GreenLights"),P=9999)
+
+### NET PANEL ANALYSIS
+NP_ttest<- netpanels %>% dplyr::select(SetLocation,Year,TripID,SetID,Treatment,TotalBycatch) %>%
+  filter(!TripID==501) %>%    ### remove the trip that had only treatment but no control
+  group_by(SetLocation,Year,TripID,SetID) %>%
+  spread(key=Treatment, value=TotalBycatch)
+pairedtestsummary$P[1]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- netpanels %>% dplyr::select(SetLocation,Year,TripID,SetID,Treatment,LTDTotalBycatch) %>%
+  filter(!TripID==501) %>%    ### remove the trip that had only treatment but no control
+  group_by(SetLocation,Year,TripID,SetID) %>%
+  spread(key=Treatment, value=LTDTotalBycatch)
+pairedtestsummary$P[2]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- netpanels %>% dplyr::select(SetLocation,Year,TripID,SetID,Treatment,BPUE) %>%
+  filter(!TripID==501) %>%    ### remove the trip that had only treatment but no control
+  group_by(SetLocation,Year,TripID,SetID) %>%
+  spread(key=Treatment, value=BPUE)
+pairedtestsummary$P[3]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- netpanels %>% dplyr::select(SetLocation,Year,TripID,SetID,Treatment,CPUE) %>%
+  filter(!TripID==501) %>%    ### remove the trip that had only treatment but no control
+  group_by(SetLocation,Year,TripID,SetID) %>%
+  spread(key=Treatment, value=CPUE)
+pairedtestsummary$P[4]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+
+### WHITE LIGHTS
+NP_ttest<- whitelights %>% dplyr::select(TripID,SetID,Treatment,TotalBycatch) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=TotalBycatch)
+pairedtestsummary$P[5]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- whitelights %>% dplyr::select(TripID,SetID,Treatment,LTDTotalBycatch) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=LTDTotalBycatch)
+pairedtestsummary$P[6]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- whitelights %>% dplyr::select(TripID,SetID,Treatment,BPUE) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=BPUE)
+pairedtestsummary$P[7]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- whitelights %>% dplyr::select(TripID,SetID,Treatment,CPUE) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=CPUE)
+pairedtestsummary$P[8]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+
+
+### GreenLights
+NP_ttest<- greenlights %>% dplyr::select(TripID,SetID,Treatment,TotalBycatch) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=TotalBycatch)
+pairedtestsummary$P[9]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- greenlights %>% dplyr::select(TripID,SetID,Treatment,LTDTotalBycatch) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=LTDTotalBycatch)
+pairedtestsummary$P[10]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- greenlights %>% dplyr::select(TripID,SetID,Treatment,BPUE) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=BPUE)
+pairedtestsummary$P[11]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+NP_ttest<- greenlights %>% dplyr::select(TripID,SetID,Treatment,CPUE) %>%
+  group_by(TripID,SetID) %>%
+  spread(key=Treatment, value=CPUE)
+pairedtestsummary$P[12]<-wilcox.test(NP_ttest$Control,NP_ttest$Treatment, paired=TRUE, conf.level=0.95,exact=FALSE)$p.value
+
+### cast results in a table after adjusting for multiple comparisons
+pvaltab<-  pairedtestsummary %>% filter(P<1) %>% mutate(P=round(p.adjust(P, method = 'BH'),3)) %>% spread(key=Mitigation, value=P) 
+
+
+kable(pvaltab, caption="P values of paired samples tests for each mitigation method",col.names=  c("Response Variable","Net panels","White flashing lights","Green lights"))
+```
+
+<br>
+<br>
+
+## Simple hurdle model to model treatment effects on bycatch occurrence and abundance
+
+Next we will investigate whether there may be any evidence for treatment effects on either of the two components, namely that bycatch occurs at all, or that the number of birds caught varies in those trips where bycatch does occur.
+<br>
+For this we will use a simple hurdle model that treats responses in a two-step process, first modelling the occurrence of any bycatch in a simple binomial GLM, and then modelling the number of birds that were caught in sets that actually caught something in a Poisson GLM. We compare a model that includes 'treatment' as a fixed factor with one that only includes effort as offset, and present parameter estimates, p-values (testing whether the parameter estimate is significantly different from 0), and the difference in AIC between the null model (no treatment effect) and the model with treatment. If the mitigation would work, we would expect parameter estimates <0, a P-value of <0.05, and negative dAIC values.
+
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+hurdlesummary<-expand.grid(term=c("occu","abund"),Response=c("Bycatch","LTDU","VESC"), Mitigation=c("NetPanels","WhiteLights","GreenLights"),mean=0,SE=0,P=9999,dAIC=0)
+
+### NET PANEL ANALYSIS
+netpanels<-netpanels %>% mutate(effort=NetLength*SoakTime)
+treat <- countreg::hurdle(TotalBycatch ~ Treatment+effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(TotalBycatch ~ effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[1,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[2,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[1:2,7]<-AIC(treat)-AIC(null)
+
+treat <- countreg::hurdle(LTDTotalBycatch ~ Treatment+effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(LTDTotalBycatch ~ effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[3,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[4,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[3:4,7]<-AIC(treat)-AIC(null)
+
+treat <- countreg::hurdle(VSTotalBycatch ~ Treatment+effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(VSTotalBycatch ~ effort, data=netpanels, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[5,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[6,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[5:6,7]<-AIC(treat)-AIC(null)
+
+
+### WHITE LIGHTS ANALYSIS
+whitelights<-whitelights %>% mutate(effort=NetLength*SoakTime)
+treat <- countreg::hurdle(TotalBycatch ~ Treatment+effort, data=whitelights, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(TotalBycatch ~ effort, data=whitelights, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[7,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[8,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[7:8,7]<-AIC(treat)-AIC(null)
+
+treat <- countreg::hurdle(LTDTotalBycatch ~ Treatment+effort, data=whitelights, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(LTDTotalBycatch ~ effort, data=whitelights, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[9,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[10,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[9:10,7]<-AIC(treat)-AIC(null)
+
+
+
+### GREEN LIGHTS ANALYSIS
+greenlights<-greenlights %>% mutate(effort=NetLength*SoakTime)
+treat <- countreg::hurdle(TotalBycatch ~ Treatment+effort, data=greenlights, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(TotalBycatch ~ effort, data=greenlights, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[13,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[14,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[13:14,7]<-AIC(treat)-AIC(null)
+
+treat <- countreg::hurdle(LTDTotalBycatch ~ Treatment+effort, data=greenlights, dist = "poisson", zero.dist = "binomial")
+null<- countreg::hurdle(LTDTotalBycatch ~ effort, data=greenlights, dist = "poisson", zero.dist = "binomial")
+out<-summary(treat)
+hurdlesummary[15,4:6]<-out$coefficients$zero[2,c(1,2,4)]
+hurdlesummary[16,4:6]<-out$coefficients$count[2,c(1,2,4)]
+hurdlesummary[15:16,7]<-AIC(treat)-AIC(null)
+
+
+
+### cast results in a table
+
+hurdletab<-  hurdlesummary %>% filter(P<1) %>% mutate(P=round(P,3),mean=round(mean,3),SE=round(SE,3),dAIC=round(dAIC,3)) %>% dplyr::select(Mitigation, Response,term,mean,SE,P,dAIC)
+
+kable(hurdletab, caption="Summary of hurdle models examining treatment effects on occurrence and rate of bycatch. Note that a positive parameter estimate indicates that bycatch increases when mitigation is included.",col.names=  c("Mitigation","Response Variable","Term in model","mean parameter estimate","stand. error","P-value","delta AIC to null model"))
+```
+
+
+
+## Using machine learning to explore whether there may be any treatment effect
+
+Having found no beneficial effects in the above analyses, we will use a very powerful algorithm (RandomForest) to extract any patterns that may be in the dataset, in the hope that there may be an effect of our mitigation treatment in combination with a bunch of other variables (i.e. year, location, effort etc.).
+<br>
+We fit a randomForest model for each treatment and examine which variable is most important in explaining whether any bycatch occurs at all. The overall quality of the model is assessed by the area under the ROC-curve (AUC), which is 1 for a perfect model and 0.5 if the model is totally worthless.
+
+
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+RFsummary<-expand.grid(Response=c("Bycatch","LTDU","VESC"), Mitigation=c("NetPanels","WhiteLights","GreenLights"),relIMP=0, mostIMP=NA, AUC=0)
+
+### NET PANEL ANALYSIS
+RFsummary[1,3]<-IMP_NP_tot$rel_imp[IMP_NP_tot$variable=="Treatment"]
+RFsummary[1,4]<-as.character(IMP_NP_tot$variable[1])
+RFsummary[1,5]<-auc(netpanels$Pbycatch, pred_NP_tot)
+
+RFsummary[2,3]<-IMP_NP_LTDU$rel_imp[IMP_NP_LTDU$variable=="Treatment"]
+RFsummary[2,4]<-as.character(IMP_NP_LTDU$variable[1])
+RFsummary[2,5]<-auc(netpanels$LTDPbycatch, pred_NP_LTDU)
+
+RFsummary[3,3]<-IMP_NP_VESC$rel_imp[IMP_NP_VESC$variable=="Treatment"]
+RFsummary[3,4]<-as.character(IMP_NP_VESC$variable[1])
+RFsummary[3,5]<-auc(netpanels$VSPbycatch, pred_NP_VESC)
+
+
+### WHITE LIGHTS ANALYSIS
+
+RFsummary[4,3]<-IMP_WL_tot$rel_imp[IMP_WL_tot$variable=="Treatment"]
+RFsummary[4,4]<-as.character(IMP_WL_tot$variable[1])
+RFsummary[4,5]<-auc(whitelights$Pbycatch, pred_WL_tot)
+
+RFsummary[5,3]<-IMP_WL_LTDU$rel_imp[IMP_WL_LTDU$variable=="Treatment"]
+RFsummary[5,4]<-as.character(IMP_WL_LTDU$variable[1])
+RFsummary[5,5]<-auc(whitelights$LTDPbycatch, pred_WL_LTDU)
+
+
+
+
+### GREEN LIGHTS ANALYSIS
+
+RFsummary[7,3]<-IMP_GL_tot$rel_imp[IMP_GL_tot$variable=="Treatment"]
+RFsummary[7,4]<-as.character(IMP_GL_tot$variable[1])
+RFsummary[7,5]<-auc(greenlights$Pbycatch, pred)
+
+RFsummary[8,3]<-IMP_GL_LTDU$rel_imp[IMP_GL_LTDU$variable=="Treatment"]
+RFsummary[8,4]<-as.character(IMP_GL_LTDU$variable[1])
+RFsummary[8,5]<-auc(greenlights$LTDPbycatch, pred)
+
+
+### cast results in a table
+
+RFtab<-  RFsummary %>% filter(AUC>0) %>% mutate(relIMP=round(relIMP,2),AUC=round(AUC,3))
+
+kable(RFtab[,c(2,1,3,4,5)], caption="Summary of random forest models explaining variation in bycatch numbers and identifying most important predictor variables.",col.names=  c("Mitigation","Response Variable","relative importance of treatment (%)","most important predictor","AUC"))
+```
+
+
+
+## Hierarchical hurdle model with random trip effects to account for all uncertainty
+
+Although the analyses above already indicate clearly that there is no effect of treatment on bycatch - or that the effects that we found are in the wrong direction - we have so far not accounted for the non-independence of bycatch within the same trip, and have not corrected for location.
+<br>
+We therefore constructed a hierarchical hurdle model based on similar models used by Gardner et al. (2008) for sea turtle bycatch. This model had the same two components (for occurrence of bycatch, and for the number of birds caught in trips with bycatch) as the simple hurdle model above, but in addition had a random effect for each trip to account for the variation in time and space and account for the fact that paired trials within a trip are not strictly independent. We also included a location-specific intercept for the occurrence of bycatch, reflecting the potentially stark differences in bycatch probability between coastal and offshore locations for the net panel and green light trials. Finally, this model also allowed us to include a treatment effect on either the occurrence or the abundance component (or both), and we estimated the probability of including each treatment parameter to improve model fit.
+<br>
+The following table shows the parameter estimates for each mitigation method, with the strength of inference that can be inferred. If treatment showed a reduction in bycatch, we would expect a *negative* parameter estimate, with an inclusion probability close to 1. An inclusion probability close to 0 indicates that the treatment had no effect, and a positive parameter estimate indicates that the treatment led to an increase in bycatch.
+
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+hurdsumtab<-expand.grid(Parameter=c("Bycatch rate","occurrence probability","treatment inclusion on 'occurrence'","treatment inclusion on 'rate'"),Mitigation=c("NetPanels","WhiteLights","GreenLights"),mean=NA,
+                     lcl=NA,ucl=NA)
+
+for (parms in 1:4){
+
+hurdsumtab[parms,3:5]<-c(NPmodel$mean[[parms]],NPmodel$q2.5[[parms]],NPmodel$q97.5[[parms]])
+hurdsumtab[parms+4,3:5]<-c(WLmodel$mean[[parms]],WLmodel$q2.5[[parms]],WLmodel$q97.5[[parms]])
+hurdsumtab[parms+8,3:5]<-c(GLmodel$mean[[parms]],GLmodel$q2.5[[parms]],GLmodel$q97.5[[parms]])
+}
+hurdsumtab[,3:5]<-round(hurdsumtab[,3:5],3)
+
+kable(hurdsumtab[,c(2,1,3:5)], caption="Summary of hierarchical Bayesian hurdle model estimating the effect of treatment on occurrence of bycatch and the number of birds caught given that there was any bycatch (Bycatch rate). Inclusion probabilities for the two treatment parameters on occurrence and rate indicate whether their inclusion improved the fit of the model. All estimates are presented as mean and upper and lower 95% credible interval limits. If 0 is included in this interval, there is no statistical evidence for an effect.",col.names=  c("Mitigation","Parameter","mean estimate","lower 95% limit","upper 95% limit"))
+```
+
+<br>
+<br>
+
+To assess whether we can trust these models we calculated a Bayesian P-value for each model. The Bayesian P-value is an indicator of model fit, and values of 0.5 indicate a perfectly fitting model, while more extreme values indicate increasing lack of fit (i.e. the data contain more variation than is accounted for by the model). For the net panel analysis, our model used only Long-tailed Duck bycatch and showed satisfactory fit (Bayesian P-value: `r mean(NPmodel$sims.list$fit.new > NPmodel$sims.list$fit)`); for the white flashing lights we used all bycatch and the model fit the data well (`r mean(WLmodel$sims.list$fit.new > WLmodel$sims.list$fit)`), while for the green light model there was a problematic lack-of-fit (`r mean(GLmodel$sims.list$fit.new > GLmodel$sims.list$fit)`).
+<br>
+<br>
+
+## Estimated bycatch rates from the hierarchical hurdle model
+
+The following table shows the mean estimated (+/- 95% credible intervals) bycatch rate of Long-tailed Ducks in net panel trials and all seabirds in the two light trials. These estimates are provided in number of birds caught per net meter per day.
+
+```{r, echo=FALSE,warning=FALSE,error=FALSE,message=FALSE}
+
+
+tabestrates<-rbind(plotdat1,plotdat3,plotdat2) %>% group_by(Trial,Treatment) %>% summarise(mean=mean(mean),lcl=mean(lcl),ucl=mean(ucl))
+
+kable(tabestrates, caption="Estimates of seabird bycatch rates per net m per day during bycatch mitigation trials of 3 different methods.",col.names=  c("Mitigation","Treatment","mean bycatch rate","lower 95% limit","upper 95% limit"))
+```
+
+<br>
+<br>
+

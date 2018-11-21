@@ -1,0 +1,49 @@
+
+
+
+model{
+  
+  # PRIORS FOR REGRESSION PARAMETERS
+
+  intercept.occu ~ dnorm(0, 0.0001)
+  treat.occu ~ dnorm(0, 0.0001)
+  intercept.abund ~ dnorm(0, 0.0001)
+  treat.abund ~ dnorm(0, 0.0001)
+
+
+  # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
+    for(t in 1:ntrips){
+      occ.trip[t]~dnorm(0,tau.trip)    ## trip-specific random effect for occurrence
+      abund.trip[t]~dnorm(0,tau.trip)    ## trip-specific random effect for abundance
+    }
+    tau.trip<-1/(sigma.trip*sigma.trip)
+    sigma.trip~dunif(0,10)
+    
+
+
+
+  # LOOP OVER  every observation
+  for(i in 1:N){
+    
+    # define the logistic regression model, where psi is the probability of bycatch occurring at all
+    logit(psi[i]) <- intercept.occu + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + w3*occ.trip[ind[i]]
+    z[i]~dbern(psi[i])
+    
+    # define the poisson regression model for abundance and multiply with bycatch probability
+    y[i] ~ dpois(phi[i])
+    phi[i]<-lambda[i]*z[i]
+    log(lambda[i])<- log(eff[i]) + intercept.abund + w2*treat.abund*TREATMENT[i] + w4*abund.trip[ind[i]]
+    
+  } ## end loop over each observation
+
+
+  ### INSERT MODEL SELECTION COEFFICIENTS
+  w1~dbern(0.5)
+  w2~dbern(0.5)
+  w3~dbern(0.5)
+  w4~dbern(0.5)
+
+  
+} ## end model
+
+
