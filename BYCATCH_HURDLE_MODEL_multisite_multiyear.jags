@@ -5,15 +5,19 @@ model{
   
   # PRIORS FOR REGRESSION PARAMETERS
   for(l in 1:2){
-for(y in 1:2){
-  intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-specific intercept for occurrence of bycatch
-  intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-specific intercept for quantity of bycatch
-}
+	  for(y in 1:2){
+  		intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for occurrence of bycatch
+  		intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for quantity of bycatch
+	  }
   }
   
   treat.occu ~ dnorm(0, 0.01)
-  #intercept.abund ~ dnorm(0, 0.01)
   treat.abund ~ dnorm(0, 0.01)
+
+
+  # PRIORS FOR MODEL SELECTION COEFFICIENTS
+  w1~dbern(0.5)
+  w2~dbern(0.5)
 
 
   # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -28,7 +32,7 @@ for(y in 1:2){
     
 
 
-  # LOOP OVER  every observation
+  # LIKELIHOOD LOOP OVER  every observation
   for(i in 1:N){
     
     # define the logistic regression model, where psi is the probability of bycatch occurring at all
@@ -43,18 +47,12 @@ for(y in 1:2){
   } ## end loop over each observation
 
 
-  ### INSERT MODEL SELECTION COEFFICIENTS
-  w1~dbern(0.5)
-  w2~dbern(0.5)
+  # BACKTRANSFORM TREATMENT PARAMETERS
+  #treat.effect.occu<- exp(treat.occu)/(1+exp(treat.occu))
+  #treat.effect.rate<- exp(treat.abund)
 
 
-  ### DERIVED PARAMETERS FOR DISPLAYING OUTPUT
-  #BPUE.treat<-mean(phi[TREATMENT==1])
-  #BPUE.control<-mean(phi[TREATMENT==0])
-
-
-# # Computation of fit statistic (Bayesian p-value)
-# # Fit statistic for observed data
+## Computation of fit statistic (Bayesian p-value)
 
   for(i in 1:N){
 
@@ -69,8 +67,8 @@ for(y in 1:2){
       E2.new[i] <- pow(E.new[i], 2)
       }
 
-fit <- sum(E2[])# Sum up squared residuals for actual data set
-fit.new <- sum(E2.new[]) # Sum up for replicate data sets
+fit <- sum(E2[])              ### Sum up squared residuals for actual data set
+fit.new <- sum(E2.new[])      ### Sum up squared residuals for replicate data sets
 
 
   

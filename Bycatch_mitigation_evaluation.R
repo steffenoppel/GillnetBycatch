@@ -844,7 +844,7 @@ plotdat2 %>% group_by(Trial,Treatment) %>% summarise(mean=mean(mean),lcl=mean(lc
 ###############################################################################
 ####   SAVE WORKSPACE TO QUICKLY REPEAT PLOTTING DEMANDS         #############
 ###############################################################################
-setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\GillnetBycatch")
+setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
 #save.image("GillnetBycatch_analyses_complete_TripID_RF.RData")
 load("GillnetBycatch_analyses_complete.RData")
 
@@ -859,8 +859,8 @@ library(plotly)
 Sys.setenv(RSTUDIO_PANDOC="C:/Program Files (x86)/RStudio/bin/pandoc")
 #Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/pandoc")
 
-rmarkdown::render('C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\GillnetBycatch\\SummaryResults_mitigation_trials.Rmd',
-                  output_file = "BycatchMitigationSummary.docx",
+rmarkdown::render('C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis\\SummaryResults_mitigation_trials.Rmd',
+                  output_file = "BycatchMitigationSummary.html",
                   output_dir = 'C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch')
 
 
