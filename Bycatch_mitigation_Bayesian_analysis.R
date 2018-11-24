@@ -160,7 +160,7 @@ NP_VESC_dat<-list(y = netpanels$VSTotalBycatch,
 NP_FISH_dat<-list(y = netpanels$TotalCatch[!is.na(netpanels$TotalCatch)],
                   loc=loc[!is.na(netpanels$TotalCatch)],
                   year=year[!is.na(netpanels$TotalCatch)],
-                  N=N,
+                  N=nrow(netpanels[!is.na(netpanels$TotalCatch),]),
                   ind=tripID[!is.na(netpanels$TotalCatch)],
                   ntrips=length(unique(tripID)),
                   TREATMENT=ifelse(netpanels$Treatment[!is.na(netpanels$TotalCatch)]=="Control",0,1),
@@ -188,7 +188,7 @@ WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
                  eff = whitelights$effort)
 
 WL_FISH_dat<-list(y = whitelights$TotalCatch[!is.na(whitelights$TotalCatch)],
-                 N=N,
+                 N=nrow(whitelights[!is.na(whitelights$TotalCatch),]),
                  ind=tripID[!is.na(whitelights$TotalCatch)],
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(whitelights$Treatment[!is.na(whitelights$TotalCatch)]=="Control",0,1),
@@ -220,7 +220,7 @@ GL_LTDU_dat<-list(y = greenlights$LTDTotalBycatch,
 GL_FISH_dat<-list(y = greenlights$FishCatch[!is.na(greenlights$FishCatch)],
                   loc=loc[!is.na(greenlights$FishCatch)],
                   year=year[!is.na(greenlights$FishCatch)],			
-                  N=N,
+                  N=nrow(greenlights[!is.na(greenlights$FishCatch),]),
                   ind=tripID[!is.na(greenlights$FishCatch)],
                   ntrips=length(unique(tripID)),
                   TREATMENT=ifelse(greenlights$Treatment[!is.na(greenlights$FishCatch)]=="Control",0,1),
@@ -324,6 +324,91 @@ sink()
 
 
 
+#### SPECIFY NEGATIVE BINOMIAL MODEL FOR FISH CATCH ###
+
+setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
+sink("FISHCATCH_MODEL_multisite.jags")
+cat("
+    
+    
+    model{
+    
+    # PRIORS FOR REGRESSION PARAMETERS
+    for(l in 1:2){
+      for(y in 1:2){
+        intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for occurrence of bycatch
+        intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for quantity of bycatch
+      }
+    }
+    
+    treat.occu ~ dnorm(0, 0.01)
+    treat.abund ~ dnorm(0, 0.01)
+
+    # PRIOR FOR NEG BIN RATE
+    r <- exp(logalpha)
+    logalpha ~ dnorm(0,0.001)
+    
+    
+    # PRIORS FOR MODEL SELECTION COEFFICIENTS
+    w1~dbern(0.5)
+    w2~dbern(0.5)
+    
+    
+    # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
+    for(t in 1:ntrips){
+      occ.trip[t]~dnorm(0,tau.occ.trip)    ## trip-specific random effect for occurrence
+      abund.trip[t]~dnorm(0,tau.ab.trip)    ## trip-specific random effect for abundance
+    }
+    tau.occ.trip<-1/(sigma.occ.trip*sigma.occ.trip)
+    sigma.occ.trip~dunif(0,10)
+    tau.ab.trip<-1/(sigma.ab.trip*sigma.ab.trip)
+    sigma.ab.trip~dunif(0,10)
+    
+    
+    
+    # LIKELIHOOD LOOP OVER  every observation
+    for(i in 1:N){
+
+      y[i] ~ dnegbin(p[i],r)
+      p[i] <- r/r+lamda[i]*(1-z[i])
+    
+      # define the zero-inflation model, where psi is the probability of any fish being caught
+      z[i] ~ dbern(psi[i])
+      logit(psi[i]) <- intercept.occu[loc[i],year[i]] + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    
+      # define the negative binomial regression model for abundance
+      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+    
+
+        } ## end loop over each observation
+    
+    
+    ## Computation of fit statistic (Bayesian p-value)
+    
+    for(i in 1:N){
+    
+    # Actual data
+    sd.resi[i]<-sqrt(p[i]*(1-psi[i])) +0.5
+    E[i]<-(y[i]-p[i])/ sd.resi[i]
+    E2[i] <- pow(E[i],2)
+    
+    # Replicate data
+    M.new[i]~dpois(p[i])
+    E.new[i]<-(M.new[i]-p[i])/sd.resi[i]
+    E2.new[i] <- pow(E.new[i], 2)
+    }
+    
+    fit <- sum(E2[])              ### Sum up squared residuals for actual data set
+    fit.new <- sum(E2.new[])      ### Sum up squared residuals for replicate data sets
+    
+    
+    
+    } ## end model
+    
+    ",fill = TRUE)
+sink()
+
+
 
 
 
@@ -373,6 +458,8 @@ ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY[ANALYSIS_SUMMARY$DATA %in% ls(),]
 
 ## SPECIFY THE MODELS FOR EACH RUN
 ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",4),rep("BYCATCH_HURDLE_MODEL_singlesite.jags",3),rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",3))
+ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
+
 ANALYSIS_SUMMARY$P<-0
 ANALYSIS_SUMMARY$Rhat<-1
 ANALYSIS_SUMMARY$DIC<-1
@@ -386,7 +473,7 @@ PLOT_SUMMARY<-data.frame()
 ### LOOP OVER EACH ANALYSIS 
 ###########################
 
-for (m in 1:nrow(ANALYSIS_SUMMARY)){
+for (m in c(2,3,4,6,7,9,10)){
 
 ### RUN MODEL 
 dirfile<-paste("C:/STEFFEN/RSPB/Marine/Bycatch/GillnetBycatch/Analysis/",ANALYSIS_SUMMARY$Model[m],sep="")
@@ -394,9 +481,9 @@ model <- jagsUI(JAGS.DAT[[m]], inits, params, dirfile, n.chains = nc, n.thin = n
 
 
 ### ASSEMBLE MODEL FIT STATS IN SUMMARY TABLE
-ANALYSIS_SUMMARY$P[m]<-mean(NPmodel$sims.list$fit.new > NPmodel$sims.list$fit)
-ANALYSIS_SUMMARY$DIC[m]<-NPmodel$DIC
-ANALYSIS_SUMMARY$Rhat[m]<-max(NPmodel$summary[,8])
+ANALYSIS_SUMMARY$P[m]<-mean(model$sims.list$fit.new > model$sims.list$fit)
+ANALYSIS_SUMMARY$DIC[m]<-model$DIC
+ANALYSIS_SUMMARY$Rhat[m]<-max(model$summary[,8])
 
 #### ASSEMBLE SUMMARY OF PARAMETER ESTIMATES
 parmest<-data.frame(Mitigation=ANALYSIS_SUMMARY$Mitigation[m],
@@ -417,7 +504,7 @@ plotdat<-data.frame(Mitigation=ANALYSIS_SUMMARY$Mitigation[m],
                     mean=model$mean$phi,
                     lcl=model$q2.5$phi,ucl=model$q97.5$phi)
 plotdat<-plotdat %>% group_by(Mitigation,Response,Treatment) %>% summarise(mean=mean(mean),lcl=mean(lcl),ucl=mean(ucl)) 
-PLOT_SUMMARY<-rbind(PLOT_SUMMARY,plotdat)
+PLOT_SUMMARY<-rbind(PLOT_SUMMARY,as_data_frame(plotdat))
 
 
 #### SAVE OUTPUT BEFORE MOVING ON TO NEXT MODEL
@@ -435,27 +522,38 @@ fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
 
 
 
-###############################################################################
-####   SAVE WORKSPACE TO QUICKLY REPEAT PLOTTING DEMANDS         #############
-###############################################################################
-setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
-#save.image("GillnetBycatch_analyses_complete_TripID_RF.RData")
-load("GillnetBycatch_analyses_complete.RData")
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####     PLOT OUTPUT OF ESTIMATED BYCATCH RATE           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 
-##################################################################
-### PRODUCE OUTPUT REPORT WITH KEY TABLES AND FIGURES ###
-##################################################################
-library(markdown)
-library(rmarkdown)
-library(knitr)
-library(plotly)
-### create HTML report for overall summary report
-Sys.setenv(RSTUDIO_PANDOC="C:/Program Files (x86)/RStudio/bin/pandoc")
-#Sys.setenv(RSTUDIO_PANDOC="C:/Program Files/RStudio/bin/pandoc")
 
-rmarkdown::render('C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis\\SummaryResults_mitigation_trials.Rmd',
-                  output_file = "BycatchMitigationSummary.html",
-                  output_dir = 'C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch')
+
+
+#pdf("Fig2_gillnet_bycatch_estimates.pdf", width=6, height=9)
+
+PLOT_SUMMARY %>% mutate(Net=ifelse(Treatment==1,'Treatment','Control')) %>%
+
+  ggplot(aes(y=mean, x=Net)) + geom_point(size=2)+
+  geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
+  facet_grid(Mitigation ~ Response,scales='free_y', shrink = TRUE)+      ## does not allow free y scales within rows
+  #facet_wrap(~Mitigation + Target,ncol=2,scales='free_y')+
+  xlab("Fishing net category") +
+  ylab("Bycatch rate per net m per day") +
+  theme(panel.background=element_rect(fill="white", colour="black"), 
+        axis.text=element_text(size=18, color="black"), 
+        axis.title=element_text(size=20), 
+        strip.text=element_text(size=18, color="black"), 
+        strip.background=element_rect(fill="white", colour="black"), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.border = element_blank())
+
+dev.off()
+
+
+
 
 
 
