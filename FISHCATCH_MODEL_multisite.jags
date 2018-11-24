@@ -1,0 +1,78 @@
+
+    
+    
+    model{
+    
+    # PRIORS FOR REGRESSION PARAMETERS
+    for(l in 1:2){
+      for(y in 1:2){
+        intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for occurrence of bycatch
+        intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for quantity of bycatch
+      }
+    }
+    
+    treat.occu ~ dnorm(0, 0.01)
+    treat.abund ~ dnorm(0, 0.01)
+
+    # PRIOR FOR NEG BIN RATE
+    r <- exp(logalpha)
+    logalpha ~ dnorm(0,0.001)
+    
+    
+    # PRIORS FOR MODEL SELECTION COEFFICIENTS
+    w1~dbern(0.5)
+    w2~dbern(0.5)
+    
+    
+    # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
+    for(t in 1:ntrips){
+      occ.trip[t]~dnorm(0,tau.occ.trip)    ## trip-specific random effect for occurrence
+      abund.trip[t]~dnorm(0,tau.ab.trip)    ## trip-specific random effect for abundance
+    }
+    tau.occ.trip<-1/(sigma.occ.trip*sigma.occ.trip)
+    sigma.occ.trip~dunif(0,10)
+    tau.ab.trip<-1/(sigma.ab.trip*sigma.ab.trip)
+    sigma.ab.trip~dunif(0,10)
+    
+    
+    
+    # LIKELIHOOD LOOP OVER  every observation
+    for(i in 1:N){
+
+      y[i] ~ dnegbin(p[i],r)
+      p[i] <- r/r+lamda[i]*(1-z[i])
+    
+      # define the zero-inflation model, where psi is the probability of any fish being caught
+      z[i] ~ dbern(psi[i])
+      logit(psi[i]) <- intercept.occu[loc[i],year[i]] + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    
+      # define the negative binomial regression model for abundance
+      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+    
+
+        } ## end loop over each observation
+    
+    
+    ## Computation of fit statistic (Bayesian p-value)
+    
+    for(i in 1:N){
+    
+    # Actual data
+    sd.resi[i]<-sqrt(p[i]*(1-psi[i])) +0.5
+    E[i]<-(y[i]-p[i])/ sd.resi[i]
+    E2[i] <- pow(E[i],2)
+    
+    # Replicate data
+    M.new[i]~dpois(p[i])
+    E.new[i]<-(M.new[i]-p[i])/sd.resi[i]
+    E2.new[i] <- pow(E.new[i], 2)
+    }
+    
+    fit <- sum(E2[])              ### Sum up squared residuals for actual data set
+    fit.new <- sum(E2.new[])      ### Sum up squared residuals for replicate data sets
+    
+    
+    
+    } ## end model
+    
+    
