@@ -67,3 +67,15 @@ GreenLights,LTDU,treatment effect on catch occurrence,-0.17605131778638,-18.8712
 GreenLights,LTDU,treatment effect on catch rate,-0.0256323946174429,-19.1355588403047,19.1806994054235
 GreenLights,LTDU,treatment inclusion on 'occurrence',0.150743333333333,0,1
 GreenLights,LTDU,treatment inclusion on 'rate',0.10161,0,1
+NetPanels,FISH,treatment effect on catch occurrence,2.83185317962792,-17.139026118108,21.0111454064216
+NetPanels,FISH,treatment effect on catch rate,0.0481922179679585,-19.5815278604486,19.7337747718086
+NetPanels,FISH,treatment inclusion on 'occurrence',0.420016666666667,0,1
+NetPanels,FISH,treatment inclusion on 'rate',0.00578,0,0
+WhiteLights,FISH,treatment effect on catch occurrence,-0.334937761649519,-19.1216189196806,19.2740945045116
+WhiteLights,FISH,treatment effect on catch rate,0.516091659778973,-19.0915169364913,19.1256303558125
+WhiteLights,FISH,treatment inclusion on 'occurrence',0.11905,0,1
+WhiteLights,FISH,treatment inclusion on 'rate',0.0884666666666669,0,1
+GreenLights,FISH,treatment effect on catch occurrence,-1.66901738759988,-11.5004099496365,11.619250506887
+GreenLights,FISH,treatment effect on catch rate,-0.0159835297093901,-19.5200627775905,19.4348321197037
+GreenLights,FISH,treatment inclusion on 'occurrence',0.796696666666667,0,1
+GreenLights,FISH,treatment inclusion on 'rate',0.01292,0,0
