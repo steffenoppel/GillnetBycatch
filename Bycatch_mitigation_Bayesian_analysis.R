@@ -455,7 +455,7 @@ ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY[ANALYSIS_SUMMARY$DATA %in% ls(),]
 
 ## SPECIFY THE MODELS FOR EACH RUN
 ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",4),rep("BYCATCH_HURDLE_MODEL_singlesite.jags",3),rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",3))
-ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
+#ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
 
 ANALYSIS_SUMMARY$P<-0
 ANALYSIS_SUMMARY$Rhat<-1
@@ -470,7 +470,14 @@ PLOT_SUMMARY<-data.frame()
 ### LOOP OVER EACH ANALYSIS 
 ###########################
 
-for (m in c(2,3,4,6,7,9,10)){
+### READ IN DATA FROM PREVIOUS RUN
+PLOT_SUMMARY<-fread("Predicted_Catch_rates.csv")
+PARAMETER_SUMMARY<-fread("Estimated_Parameters.csv")
+ANALYSIS_SUMMARY<-fread("Model_run_summary.csv")
+
+
+#for (m in c(2,3,4,6,7,9,10)){
+for (m in c(1,5,8)){
 
 ### RUN MODEL 
 dirfile<-paste("C:/STEFFEN/RSPB/Marine/Bycatch/GillnetBycatch/Analysis/",ANALYSIS_SUMMARY$Model[m],sep="")
@@ -505,9 +512,9 @@ PLOT_SUMMARY<-rbind(PLOT_SUMMARY,as_data_frame(plotdat))
 
 
 #### SAVE OUTPUT BEFORE MOVING ON TO NEXT MODEL
-#fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
-#fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
-#fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
+fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
+fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
+fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
 
 } ### end loop over all models
 
