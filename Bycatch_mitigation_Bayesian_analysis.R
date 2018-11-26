@@ -107,12 +107,9 @@ for (tr in unique(whitelights$TripID)){
 
 ### SENSE CHECK DISTRIBUTION OF FISH DATA
 
-table(greenlights$FishCatch) ### neg bin
-table(netpanels$TotalCatch) ### weird data outliers
-table(whitelights$TotalCatch) ### seems ok
-
-
-
+hist(greenlights$FishCatch) ### neg bin
+hist(netpanels$TotalCatch) ### weird data outliers
+hist(whitelights$TotalCatch) ### neg bin
 
 
 
@@ -157,7 +154,7 @@ NP_VESC_dat<-list(y = netpanels$VSTotalBycatch,
                   TREATMENT=ifelse(netpanels$Treatment=="Control",0,1),
                   eff = netpanels$effort)
 
-NP_FISH_dat<-list(y = netpanels$TotalCatch[!is.na(netpanels$TotalCatch)],
+NP_FISH_dat<-list(y = as.integer(netpanels$TotalCatch[!is.na(netpanels$TotalCatch)]),
                   loc=loc[!is.na(netpanels$TotalCatch)],
                   year=year[!is.na(netpanels$TotalCatch)],
                   N=nrow(netpanels[!is.na(netpanels$TotalCatch),]),
@@ -187,7 +184,7 @@ WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
                  TREATMENT=ifelse(whitelights$Treatment=="Control",0,1),
                  eff = whitelights$effort)
 
-WL_FISH_dat<-list(y = whitelights$TotalCatch[!is.na(whitelights$TotalCatch)],
+WL_FISH_dat<-list(y = as.integer(whitelights$TotalCatch[!is.na(whitelights$TotalCatch)]),
                  N=nrow(whitelights[!is.na(whitelights$TotalCatch),]),
                  ind=tripID[!is.na(whitelights$TotalCatch)],
                  ntrips=length(unique(tripID)),
@@ -217,7 +214,7 @@ GL_LTDU_dat<-list(y = greenlights$LTDTotalBycatch,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(greenlights$Treatment=="Control",0,1),
                  eff = greenlights$effort)
-GL_FISH_dat<-list(y = greenlights$FishCatch[!is.na(greenlights$FishCatch)],
+GL_FISH_dat<-list(y = as.integer(greenlights$FishCatch[!is.na(greenlights$FishCatch)]),
                   loc=loc[!is.na(greenlights$FishCatch)],
                   year=year[!is.na(greenlights$FishCatch)],			
                   N=nrow(greenlights[!is.na(greenlights$FishCatch),]),
@@ -508,9 +505,9 @@ PLOT_SUMMARY<-rbind(PLOT_SUMMARY,as_data_frame(plotdat))
 
 
 #### SAVE OUTPUT BEFORE MOVING ON TO NEXT MODEL
-fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
-fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
-fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
+#fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
+#fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
+#fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
 
 } ### end loop over all models
 
