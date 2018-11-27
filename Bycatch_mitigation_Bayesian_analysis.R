@@ -560,5 +560,73 @@ dev.off()
 
 
 
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####     IF NOTHING ELSE WORKS WE USE A SIMPLE R PACKAGE      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+library(MCMCglmm)
+
+
+## NET PANELS ###
+
+prior.np_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
+np_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation+Treatment, random = ~TripID,data = netpanels, family = "poisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
+np_fish0<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation, random = ~TripID,data = netpanels, family = "poisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
+summary(np_fish)
+summary(np_fish0)
+
+
+
+## WHITE LIGHTS ###
+
+prior.wl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
+wl_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Treatment, random = ~TripID,data = whitelights, family = "poisson", thin = 1, prior = prior.wl_fish, verbose = FALSE, pl=T)
+summary(wl_fish)
+
+
+
+
+## GREEN LIGHTS ###
+
+prior.gl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
+gl_fish<-MCMCglmm(as.integer(FishCatch) ~ offset(effort)+Year+SetBlock+Treatment, random = ~TripID,data = greenlights, family = "poisson", thin = 1, prior = prior.gl_fish, verbose = FALSE, pl=T)
+x<-summary(gl_fish)
+
+
+
+
+
+
+
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####     PLOT OUTPUT OF ESTIMATED  FISH CATCH RATE           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+
+plotdat<-data.frame(Mitigation=c("Net Panels","White Lights","Green Lights"),
+                    mean=c(quantile(np_fish$Sol[,4],0.5),quantile(wl_fish$Sol[,2],0.5),quantile(gl_fish$Sol[,4],0.5)),
+                    lcl=c(quantile(np_fish$Sol[,4],0.025),quantile(wl_fish$Sol[,2],0.025),quantile(gl_fish$Sol[,4],0.025)),
+                    ucl=c(quantile(np_fish$Sol[,4],0.975),quantile(wl_fish$Sol[,2],0.975),quantile(gl_fish$Sol[,4],0.975)))
+
+
+pdf("Fig2_treatment_effect_fish_catch.pdf", width=6, height=9)
+
+  ggplot(plotdat,aes(y=mean, x=Mitigation)) + geom_point(size=2)+
+  geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
+  geom_hline(yintercept=0) +
+  xlab("Bycatch mitigation measure") +
+  ylab("Effect of treatment on fish catch") +
+  theme(panel.background=element_rect(fill="white", colour="black"), 
+        axis.text=element_text(size=18, color="black"), 
+        axis.title=element_text(size=20), 
+        strip.text=element_text(size=18, color="black"), 
+        strip.background=element_rect(fill="white", colour="black"), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.border = element_blank())
+
+dev.off()
 
 
