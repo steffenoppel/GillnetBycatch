@@ -113,6 +113,13 @@ hist(whitelights$TotalCatch) ### neg bin
 
 
 
+### FIND OUTLIER IN NETPANEL DATA
+
+netpanels %>% filter(TripID==210)
+netpanels <- netpanels %>% filter(!SetID=="210A")   ## remove this set which caught 39 ducks!!
+
+
+
 
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 #####
@@ -471,6 +478,7 @@ PLOT_SUMMARY<-data.frame()
 ###########################
 
 ### READ IN DATA FROM PREVIOUS RUN
+setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
 PLOT_SUMMARY<-fread("Predicted_Catch_rates.csv")
 PARAMETER_SUMMARY<-fread("Estimated_Parameters.csv")
 ANALYSIS_SUMMARY<-fread("Model_run_summary.csv")
@@ -571,8 +579,8 @@ library(MCMCglmm)
 ## NET PANELS ###
 
 prior.np_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-np_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation+Treatment, random = ~TripID,data = netpanels, family = "poisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
-np_fish0<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation, random = ~TripID,data = netpanels, family = "poisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
+np_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation+Treatment, random = ~TripID,data = netpanels, family = "zipoisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
+np_fish0<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation, random = ~TripID,data = netpanels, family = "zipoisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
 summary(np_fish)
 summary(np_fish0)
 
@@ -581,7 +589,7 @@ summary(np_fish0)
 ## WHITE LIGHTS ###
 
 prior.wl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-wl_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Treatment, random = ~TripID,data = whitelights, family = "poisson", thin = 1, prior = prior.wl_fish, verbose = FALSE, pl=T)
+wl_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Treatment, random = ~TripID,data = whitelights, family = "zipoisson", thin = 1, prior = prior.wl_fish, verbose = FALSE, pl=T)
 summary(wl_fish)
 
 
@@ -590,8 +598,21 @@ summary(wl_fish)
 ## GREEN LIGHTS ###
 
 prior.gl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-gl_fish<-MCMCglmm(as.integer(FishCatch) ~ offset(effort)+Year+SetBlock+Treatment, random = ~TripID,data = greenlights, family = "poisson", thin = 1, prior = prior.gl_fish, verbose = FALSE, pl=T)
+gl_fish<-MCMCglmm(as.integer(FishCatch) ~ offset(effort)+Year+SetBlock+Treatment, random = ~TripID,data = greenlights, family = "zipoisson", thin = 1, prior = prior.gl_fish, verbose = FALSE, pl=T)
 x<-summary(gl_fish)
+
+
+
+####### ATTEMPT WITH GLMMADMB ###
+
+
+install.packages("glmmADMB", 
+                 repos=c("http://glmmadmb.r-forge.r-project.org/repos",
+                         getOption("repos")),
+                 type="source")
+library(glmmADMB)
+greenlights<-greenlights %>% mutate(TripID=as.factor(TripID),Treatment=as.factor(Treatment))
+gl_fish<-glmmadmb(as.integer(FishCatch) ~ Year+SetBlock+Treatment+offset(effort)+(1|TripID), data=greenlights,family= "nbinom")
 
 
 
