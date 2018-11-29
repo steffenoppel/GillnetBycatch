@@ -13,15 +13,11 @@
     
     treat.occu ~ dnorm(0, 0.01)
     treat.abund ~ dnorm(0, 0.01)
+    effort.offset ~ dnorm(0, 0.01)
 
     # PRIOR FOR NEG BIN RATE
     r <- exp(logalpha)
     logalpha ~ dnorm(0,0.001)
-    
-    
-    # PRIORS FOR MODEL SELECTION COEFFICIENTS
-    w1~dbern(0.5)
-    w2~dbern(0.5)
     
     
     # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -43,11 +39,13 @@
       p[i] <- r/r+lamda[i]*(1-z[i])
     
       # define the zero-inflation model, where psi is the probability of any fish being caught
-      z[i] ~ dbern(psi[i])
-      logit(psi[i]) <- intercept.occu[loc[i],year[i]] + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
-    
+      # used a complementary log link function to incorporate effort offset
+      psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
+      mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+      z[i]~dbern(psi[i])
+
       # define the negative binomial regression model for abundance
-      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
     
 
         } ## end loop over each observation

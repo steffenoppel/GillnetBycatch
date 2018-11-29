@@ -180,7 +180,7 @@ NP_FISH_dat<-list(y = as.integer(netpanels$TotalCatch[!is.na(netpanels$TotalCatc
 
 N = nrow(whitelights)
 WL_TOT_dat<-list(y = whitelights$TotalBycatch,
-                z= whitelights$ZeroTrips,
+                #z= whitelights$ZeroTrips,
                 N=N,
                 ind=tripID,
                 ntrips=length(unique(tripID)),
@@ -188,7 +188,7 @@ WL_TOT_dat<-list(y = whitelights$TotalBycatch,
                 eff = whitelights$effort)
 
 WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
-                 z= whitelights$ZeroTrips,
+                 #z= whitelights$ZeroTrips,
                  N=N,
                  ind=tripID,
                  ntrips=length(unique(tripID)),
@@ -265,6 +265,7 @@ model{
   
   treat.occu ~ dnorm(0, 0.01)
   treat.abund ~ dnorm(0, 0.01)
+  effort.offset ~ dnorm(0, 0.01)
 
 
   # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -285,7 +286,7 @@ model{
     # define the logistic regression model, where psi is the probability of bycatch occurring at all
     # used a complementary log link function to incorporate effort offset
     psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
-    mu[i]<-intercept.occu[loc[i],year[i]] + eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
     z[i]~dbern(psi[i])
     
     # define the poisson regression model for abundance and multiply with bycatch probability
@@ -343,15 +344,11 @@ cat("
     
     treat.occu ~ dnorm(0, 0.01)
     treat.abund ~ dnorm(0, 0.01)
+    effort.offset ~ dnorm(0, 0.01)
 
     # PRIOR FOR NEG BIN RATE
     r <- exp(logalpha)
     logalpha ~ dnorm(0,0.001)
-    
-    
-    # PRIORS FOR MODEL SELECTION COEFFICIENTS
-    w1~dbern(0.5)
-    w2~dbern(0.5)
     
     
     # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -373,11 +370,13 @@ cat("
       p[i] <- r/r+lamda[i]*(1-z[i])
     
       # define the zero-inflation model, where psi is the probability of any fish being caught
-      z[i] ~ dbern(psi[i])
-      logit(psi[i]) <- intercept.occu[loc[i],year[i]] + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
-    
+      # used a complementary log link function to incorporate effort offset
+      psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
+      mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+      z[i]~dbern(psi[i])
+
       # define the negative binomial regression model for abundance
-      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
     
 
         } ## end loop over each observation
@@ -426,7 +425,7 @@ inits <- function(){list(intercept.occu = rnorm(0, 10),
 
 
 ####   DEFINE OUTPUT DATA
-params <- c("treat.occu","treat.abund","w1","w2","fit","fit.new","phi")
+params <- c("treat.occu","treat.abund","fit","fit.new","phi")
 
 ##### MCMC settings
 ni <- 100000
@@ -457,8 +456,8 @@ ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY %>% mutate(DATA=paste(TRIAL,Response,"dat",s
 ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY[ANALYSIS_SUMMARY$DATA %in% ls(),]
 
 ## SPECIFY THE MODELS FOR EACH RUN
-ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",4),rep("BYCATCH_HURDLE_MODEL_singlesite.jags",3),rep("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags",3))
-#ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
+ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",4),rep("BYCATCH_ZIP_MODEL_singlesite.jags",3),rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",3))
+ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
 
 ANALYSIS_SUMMARY$P<-0
 ANALYSIS_SUMMARY$Rhat<-1
@@ -475,13 +474,13 @@ PLOT_SUMMARY<-data.frame()
 
 ### READ IN DATA FROM PREVIOUS RUN
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
-PLOT_SUMMARY<-fread("Predicted_Catch_rates.csv")
-PARAMETER_SUMMARY<-fread("Estimated_Parameters.csv")
-ANALYSIS_SUMMARY<-fread("Model_run_summary.csv")
+#PLOT_SUMMARY<-fread("Predicted_Catch_rates.csv")
+#PARAMETER_SUMMARY<-fread("Estimated_Parameters.csv")
+#ANALYSIS_SUMMARY<-fread("Model_run_summary.csv")
 
 
-#for (m in c(2,3,4,6,7,9,10)){
-for (m in c(1,5,8)){
+for (m in c(2,3,4,6,7,9,10,1,5,8)){
+#for (m in c(1,5,8)){
 
 ### RUN MODEL 
 dirfile<-paste("C:/STEFFEN/RSPB/Marine/Bycatch/GillnetBycatch/Analysis/",ANALYSIS_SUMMARY$Model[m],sep="")
@@ -496,9 +495,9 @@ ANALYSIS_SUMMARY$Rhat[m]<-max(model$summary[,8])
 #### ASSEMBLE SUMMARY OF PARAMETER ESTIMATES
 parmest<-data.frame(Mitigation=ANALYSIS_SUMMARY$Mitigation[m],
                     Response=ANALYSIS_SUMMARY$Response[m],
-                    Parameter=c("treatment effect on catch occurrence","treatment effect on catch rate","treatment inclusion on 'occurrence'","treatment inclusion on 'rate'"),
+                    Parameter=c("treatment effect on catch occurrence","treatment effect on catch rate"),
                     mean=NA,lcl=NA,ucl=NA)
-for (l in 1:4){
+for (l in 1:2){
   parmest[l,4:6]<-c(model$mean[[l]],model$q2.5[[l]],model$q97.5[[l]])
 }
 PARAMETER_SUMMARY<-rbind(PARAMETER_SUMMARY,parmest)
@@ -516,9 +515,9 @@ PLOT_SUMMARY<-rbind(PLOT_SUMMARY,as_data_frame(plotdat))
 
 
 #### SAVE OUTPUT BEFORE MOVING ON TO NEXT MODEL
-fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
-fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
-fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
+fwrite(PLOT_SUMMARY,"Predicted_Catch_rates2.csv")
+fwrite(PARAMETER_SUMMARY,"Estimated_Parameters2.csv")
+fwrite(ANALYSIS_SUMMARY,"Model_run_summary2.csv")
 
 } ### end loop over all models
 
