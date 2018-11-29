@@ -6,6 +6,10 @@
 ### after preliminary evaluation of various approaches decided to analyse all data in Bayesian hierarchical models
 ### previous analysis in Bycatch_mitigation_evaluation.r
 
+### major modifications incorporated based on advice by Adam Butler on 28 Nov 2018
+### changed to complementary log link for ZIP bird bycatch model
+### removed model selection coefficients
+
 
 ### Load libraries
 library(ggplot2)
@@ -245,7 +249,7 @@ GL_FISH_dat<-list(y = as.integer(greenlights$FishCatch[!is.na(greenlights$FishCa
 #### SPECIFY MODEL FOR BYCATCH ###
 
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
-sink("BYCATCH_HURDLE_MODEL_multisite_multiyear.jags")
+sink("BYCATCH_ZIP_MODEL_multisite_multiyear.jags")
 cat("
 
 
@@ -261,11 +265,6 @@ model{
   
   treat.occu ~ dnorm(0, 0.01)
   treat.abund ~ dnorm(0, 0.01)
-
-
-  # PRIORS FOR MODEL SELECTION COEFFICIENTS
-  w1~dbern(0.5)
-  w2~dbern(0.5)
 
 
   # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -284,20 +283,17 @@ model{
   for(i in 1:N){
     
     # define the logistic regression model, where psi is the probability of bycatch occurring at all
-    logit(psi[i]) <- intercept.occu[loc[i],year[i]] + log(-(eff[i]/(1-eff[i]))) + w1*treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    # used a complementary log link function to incorporate effort offset
+    psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
+    mu[i]<-intercept.occu[loc[i],year[i]] + eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
     z[i]~dbern(psi[i])
     
     # define the poisson regression model for abundance and multiply with bycatch probability
     y[i] ~ dpois(phi[i])
-    phi[i]<-lambda[i]*z[i] ### changed from z[i] when introducing z as data
-    log(lambda[i])<- log(eff[i]) + intercept.abund[loc[i],year[i]] + w2*treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+    phi[i]<-lambda[i]*z[i]
+    log(lambda[i])<- log(eff[i]) + intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
     
   } ## end loop over each observation
-
-
-  # BACKTRANSFORM TREATMENT PARAMETERS
-  #treat.effect.occu<- exp(treat.occu)/(1+exp(treat.occu))
-  #treat.effect.rate<- exp(treat.abund)
 
 
 ## Computation of fit statistic (Bayesian p-value)
