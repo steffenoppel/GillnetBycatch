@@ -10,6 +10,8 @@
 ### changed to complementary log link for ZIP bird bycatch model
 ### removed model selection coefficients
 
+### removed fish catch analysis on 3 Dec 2018 - extra script 'Fish_catch_analysis.r'
+
 
 ### Load libraries
 library(ggplot2)
@@ -165,14 +167,6 @@ NP_VESC_dat<-list(y = netpanels$VSTotalBycatch,
                   TREATMENT=ifelse(netpanels$Treatment=="Control",0,1),
                   eff = netpanels$effort)
 
-NP_FISH_dat<-list(y = as.integer(netpanels$TotalCatch[!is.na(netpanels$TotalCatch)]),
-                  loc=loc[!is.na(netpanels$TotalCatch)],
-                  year=year[!is.na(netpanels$TotalCatch)],
-                  N=nrow(netpanels[!is.na(netpanels$TotalCatch),]),
-                  ind=tripID[!is.na(netpanels$TotalCatch)],
-                  ntrips=length(unique(tripID)),
-                  TREATMENT=ifelse(netpanels$Treatment[!is.na(netpanels$TotalCatch)]=="Control",0,1),
-                  eff = netpanels$effort[!is.na(netpanels$TotalCatch)])
 
 
 ### WHITE LIGHTS DATA - 3 models
@@ -194,13 +188,6 @@ WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(whitelights$Treatment=="Control",0,1),
                  eff = whitelights$effort)
-
-WL_FISH_dat<-list(y = as.integer(whitelights$TotalCatch[!is.na(whitelights$TotalCatch)]),
-                 N=nrow(whitelights[!is.na(whitelights$TotalCatch),]),
-                 ind=tripID[!is.na(whitelights$TotalCatch)],
-                 ntrips=length(unique(tripID)),
-                 TREATMENT=ifelse(whitelights$Treatment[!is.na(whitelights$TotalCatch)]=="Control",0,1),
-                 eff = whitelights$effort[!is.na(whitelights$TotalCatch)])
 
 
 ### GREEN LIGHTS DATA - 3 models
@@ -225,14 +212,6 @@ GL_LTDU_dat<-list(y = greenlights$LTDTotalBycatch,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(greenlights$Treatment=="Control",0,1),
                  eff = greenlights$effort)
-GL_FISH_dat<-list(y = as.integer(greenlights$FishCatch[!is.na(greenlights$FishCatch)]),
-                  loc=loc[!is.na(greenlights$FishCatch)],
-                  year=year[!is.na(greenlights$FishCatch)],			
-                  N=nrow(greenlights[!is.na(greenlights$FishCatch),]),
-                  ind=tripID[!is.na(greenlights$FishCatch)],
-                  ntrips=length(unique(tripID)),
-                  TREATMENT=ifelse(greenlights$Treatment[!is.na(greenlights$FishCatch)]=="Control",0,1),
-                  eff = greenlights$effort[!is.na(greenlights$FishCatch)])
 
 
 
@@ -325,90 +304,6 @@ sink()
 
 
 
-#### SPECIFY NEGATIVE BINOMIAL MODEL FOR FISH CATCH ###
-
-setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
-sink("FISHCATCH_MODEL_multisite.jags")
-cat("
-    
-    
-    model{
-    
-    # PRIORS FOR REGRESSION PARAMETERS
-    for(l in 1:2){
-      for(y in 1:2){
-        intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for occurrence of bycatch
-        intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for quantity of bycatch
-      }
-    }
-    
-    treat.occu ~ dnorm(0, 0.01)
-    treat.abund ~ dnorm(0, 0.01)
-    effort.offset ~ dnorm(0, 0.01)
-
-    # PRIOR FOR NEG BIN RATE
-    r <- exp(logalpha)
-    logalpha ~ dnorm(0,0.001)
-    
-    
-    # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
-    for(t in 1:ntrips){
-      occ.trip[t]~dnorm(0,tau.occ.trip)    ## trip-specific random effect for occurrence
-      abund.trip[t]~dnorm(0,tau.ab.trip)    ## trip-specific random effect for abundance
-    }
-    tau.occ.trip<-1/(sigma.occ.trip*sigma.occ.trip)
-    sigma.occ.trip~dunif(0,10)
-    tau.ab.trip<-1/(sigma.ab.trip*sigma.ab.trip)
-    sigma.ab.trip~dunif(0,10)
-    
-    
-    
-    # LIKELIHOOD LOOP OVER  every observation
-    for(i in 1:N){
-
-      y[i] ~ dnegbin(p[i],r)
-      p[i] <- r/r+lamda[i]*(1-z[i])
-    
-      # define the zero-inflation model, where psi is the probability of any fish being caught
-      # used a complementary log link function to incorporate effort offset
-      psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
-      mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
-      z[i]~dbern(psi[i])
-
-      # define the negative binomial regression model for abundance
-      log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
-    
-
-        } ## end loop over each observation
-    
-    
-    ## Computation of fit statistic (Bayesian p-value)
-    
-    for(i in 1:N){
-    
-    # Actual data
-    sd.resi[i]<-sqrt(p[i]*(1-psi[i])) +0.5
-    E[i]<-(y[i]-p[i])/ sd.resi[i]
-    E2[i] <- pow(E[i],2)
-    
-    # Replicate data
-    M.new[i]~dpois(p[i])
-    E.new[i]<-(M.new[i]-p[i])/sd.resi[i]
-    E2.new[i] <- pow(E.new[i], 2)
-    }
-    
-    fit <- sum(E2[])              ### Sum up squared residuals for actual data set
-    fit.new <- sum(E2.new[])      ### Sum up squared residuals for replicate data sets
-    
-    
-    
-    } ## end model
-    
-    ",fill = TRUE)
-sink()
-
-
-
 
 
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
@@ -428,9 +323,9 @@ inits <- function(){list(intercept.occu = rnorm(0, 10),
 params <- c("treat.occu","treat.abund","fit","fit.new","phi")
 
 ##### MCMC settings
-ni <- 100000
+ni <- 150000
 nt <- 1
-nb <- 25000
+nb <- 75000
 nc <- 4
 
 
@@ -446,19 +341,17 @@ nc <- 4
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 
 ### LIST ALL THE DATA IN ONE LIST
-JAGS.DAT<-list(NP_FISH_dat,NP_TOT_dat,NP_LTDU_dat,NP_VESC_dat,WL_FISH_dat,WL_TOT_dat,WL_LTDU_dat,GL_FISH_dat,GL_TOT_dat,GL_LTDU_dat)
+JAGS.DAT<-list(NP_TOT_dat,NP_LTDU_dat,NP_VESC_dat,WL_TOT_dat,WL_LTDU_dat,GL_TOT_dat,GL_LTDU_dat)
 
 ### LIST THE ANALYSES TO RUN
 
-ANALYSIS_SUMMARY<-expand.grid(Response=c("FISH","TOT","LTDU","VESC"), Mitigation=c("NetPanels","WhiteLights","GreenLights"))
-ANALYSIS_SUMMARY$TRIAL<-rep(c("NP","WL","GL"),each=4)
+ANALYSIS_SUMMARY<-expand.grid(Response=c("TOT","LTDU","VESC"), Mitigation=c("NetPanels","WhiteLights","GreenLights"))
+ANALYSIS_SUMMARY$TRIAL<-rep(c("NP","WL","GL"),each=3)
 ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY %>% mutate(DATA=paste(TRIAL,Response,"dat",sep="_"))
 ANALYSIS_SUMMARY<- ANALYSIS_SUMMARY[ANALYSIS_SUMMARY$DATA %in% ls(),]
 
 ## SPECIFY THE MODELS FOR EACH RUN
-ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",4),rep("BYCATCH_ZIP_MODEL_singlesite.jags",3),rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",3))
-ANALYSIS_SUMMARY$Model[c(1,5,8)]<-"FISHCATCH_MODEL_multisite.jags"
-
+ANALYSIS_SUMMARY$Model<-c(rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",3),rep("BYCATCH_ZIP_MODEL_singlesite.jags",2),rep("BYCATCH_ZIP_MODEL_multisite_multiyear.jags",2))
 ANALYSIS_SUMMARY$P<-0
 ANALYSIS_SUMMARY$Rhat<-1
 ANALYSIS_SUMMARY$DIC<-1
@@ -474,13 +367,11 @@ PLOT_SUMMARY<-data.frame()
 
 ### READ IN DATA FROM PREVIOUS RUN
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis")
-#PLOT_SUMMARY<-fread("Predicted_Catch_rates.csv")
-#PARAMETER_SUMMARY<-fread("Estimated_Parameters.csv")
-#ANALYSIS_SUMMARY<-fread("Model_run_summary.csv")
+#PLOT_SUMMARY<-fread("Predicted_Catch_rates2.csv")
+#PARAMETER_SUMMARY<-fread("Estimated_Parameters2.csv")
+#ANALYSIS_SUMMARY<-fread("Model_run_summary2.csv")
 
-
-for (m in c(2,3,4,6,7,9,10,1,5,8)){
-#for (m in c(1,5,8)){
+for (m in 1:nrow(ANALYSIS_SUMMARY)){
 
 ### RUN MODEL 
 dirfile<-paste("C:/STEFFEN/RSPB/Marine/Bycatch/GillnetBycatch/Analysis/",ANALYSIS_SUMMARY$Model[m],sep="")
@@ -515,9 +406,9 @@ PLOT_SUMMARY<-rbind(PLOT_SUMMARY,as_data_frame(plotdat))
 
 
 #### SAVE OUTPUT BEFORE MOVING ON TO NEXT MODEL
-fwrite(PLOT_SUMMARY,"Predicted_Catch_rates2.csv")
-fwrite(PARAMETER_SUMMARY,"Estimated_Parameters2.csv")
-fwrite(ANALYSIS_SUMMARY,"Model_run_summary2.csv")
+fwrite(PLOT_SUMMARY,"Predicted_Catch_rates.csv")
+fwrite(PARAMETER_SUMMARY,"Estimated_Parameters.csv")
+fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
 
 } ### end loop over all models
 
@@ -560,89 +451,5 @@ PLOT_SUMMARY %>% mutate(Net=ifelse(Treatment==1,'Treatment','Control')) %>%
 dev.off()
 
 
-
-
-
-#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-#####
-#####     IF NOTHING ELSE WORKS WE USE A SIMPLE R PACKAGE      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-#####
-#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-library(MCMCglmm)
-
-
-## NET PANELS ###
-
-prior.np_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-np_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation+Treatment, random = ~TripID,data = netpanels, family = "zipoisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
-np_fish0<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Year+SetLocation, random = ~TripID,data = netpanels, family = "zipoisson", thin = 1, prior = prior.np_fish, verbose = FALSE, pl=T)
-summary(np_fish)
-summary(np_fish0)
-
-
-
-## WHITE LIGHTS ###
-
-prior.wl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-wl_fish<-MCMCglmm(as.integer(TotalCatch) ~ offset(effort)+Treatment, random = ~TripID,data = whitelights, family = "zipoisson", thin = 1, prior = prior.wl_fish, verbose = FALSE, pl=T)
-summary(wl_fish)
-
-
-
-
-## GREEN LIGHTS ###
-
-prior.gl_fish <- list(R = list(V = 1, nu = 0.002), G = list(G1 = list(V = 1e+08, fix = 1)))
-gl_fish<-MCMCglmm(as.integer(FishCatch) ~ offset(effort)+Year+SetBlock+Treatment, random = ~TripID,data = greenlights, family = "zipoisson", thin = 1, prior = prior.gl_fish, verbose = FALSE, pl=T)
-x<-summary(gl_fish)
-
-
-
-####### ATTEMPT WITH GLMMADMB ###
-
-
-install.packages("glmmADMB", 
-                 repos=c("http://glmmadmb.r-forge.r-project.org/repos",
-                         getOption("repos")),
-                 type="source")
-library(glmmADMB)
-greenlights<-greenlights %>% mutate(TripID=as.factor(TripID),Treatment=as.factor(Treatment))
-gl_fish<-glmmadmb(as.integer(FishCatch) ~ Year+SetBlock+Treatment+offset(effort)+(1|TripID), data=greenlights,family= "nbinom")
-
-
-
-
-
-
-
-#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-#####
-#####     PLOT OUTPUT OF ESTIMATED  FISH CATCH RATE           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-#####
-#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
-
-plotdat<-data.frame(Mitigation=c("Net Panels","White Lights","Green Lights"),
-                    mean=c(quantile(np_fish$Sol[,4],0.5),quantile(wl_fish$Sol[,2],0.5),quantile(gl_fish$Sol[,4],0.5)),
-                    lcl=c(quantile(np_fish$Sol[,4],0.025),quantile(wl_fish$Sol[,2],0.025),quantile(gl_fish$Sol[,4],0.025)),
-                    ucl=c(quantile(np_fish$Sol[,4],0.975),quantile(wl_fish$Sol[,2],0.975),quantile(gl_fish$Sol[,4],0.975)))
-
-
-pdf("Fig2_treatment_effect_fish_catch.pdf", width=6, height=9)
-
-  ggplot(plotdat,aes(y=mean, x=Mitigation)) + geom_point(size=2)+
-  geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
-  geom_hline(yintercept=0) +
-  xlab("Bycatch mitigation measure") +
-  ylab("Effect of treatment on fish catch") +
-  theme(panel.background=element_rect(fill="white", colour="black"), 
-        axis.text=element_text(size=18, color="black"), 
-        axis.title=element_text(size=20), 
-        strip.text=element_text(size=18, color="black"), 
-        strip.background=element_rect(fill="white", colour="black"), 
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        panel.border = element_blank())
-
-dev.off()
 
 
