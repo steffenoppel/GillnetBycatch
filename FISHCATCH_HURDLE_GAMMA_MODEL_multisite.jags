@@ -1,0 +1,92 @@
+
+    
+    
+    model{
+    
+    # FOR THE ONES TRICK
+    C<-10000
+
+    # PRIORS FOR REGRESSION PARAMETERS
+    for(l in 1:2){
+      for(y in 1:2){
+        intercept.occu[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for occurrence of bycatch
+        intercept.abund[l,y] ~ dnorm(0, 0.01)  ## location-year-specific intercept for quantity of bycatch
+      }
+    }
+    
+    treat.occu ~ dnorm(0, 0.01)
+    treat.abund ~ dnorm(0, 0.01)
+    effort.offset ~ dnorm(0, 0.01)
+    sd ~ dgamma(2, 2)
+
+
+    # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
+    for(t in 1:ntrips){
+      occ.trip[t]~dnorm(0,tau.occ.trip)    ## trip-specific random effect for occurrence
+      abund.trip[t]~dnorm(0,tau.ab.trip)    ## trip-specific random effect for abundance
+    }
+    tau.occ.trip<-1/(sigma.occ.trip*sigma.occ.trip)
+    sigma.occ.trip~dunif(0,10)
+    tau.ab.trip<-1/(sigma.ab.trip*sigma.ab.trip)
+    sigma.ab.trip~dunif(0,10)
+    
+    
+    
+    # LIKELIHOOD LOOP OVER  every observation
+    for(i in 1:N){
+
+    # define the logistic regression model, where w is the probability of occurance.
+    # use the logistic transformation exp(z)/(1 + exp(z)), where z is a linear function
+    w[i] <- 1 - exp(-exp(zeta[i]))   ### replaced     logit(psi[i])
+    zeta[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    
+
+    # define the gamma regression model for the mean. use the log link the ensure positive, non-zero mu
+    mu[i] <- pow(eta[i], -1)
+    eta[i] <- intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
+        
+
+    # redefine the mu and sd of the continuous part into the shape and scale parameters
+    shape[i] <- pow(mu[i], 2) / pow(sd, 2)
+    rate[i] <- mu[i] / pow(sd, 2)
+    
+    # for readability, define the log-likelihood of the gamma here
+    logGamma[i] <- log(dgamma(y[i], shape[i], rate[i]))
+    
+    # define the total likelihood, where the likelihood is (1 - w) if y < 0.0001 (z = 0) or
+    # the likelihood is w * gammalik if y >= 0.0001 (z = 1). So if z = 1, then the first bit must be
+    # 0 and the second bit 1. Use 1 - z, which is 0 if y > 0.0001 and 1 if y < 0.0001
+    logLik[i] <- (1 - z[i]) * log(1 - w[i]) + z[i] * ( log(w[i]) + logGamma[i] )
+    
+    Lik[i] <- exp(logLik[i])
+    
+    # Use the ones trick
+    p[i] <- Lik[i] / C
+    ones[i] ~ dbern(p[i])
+
+        } ## end loop over each observation
+    
+    
+    # ## Computation of fit statistic (Bayesian p-value)
+    # 
+    # for(i in 1:N){
+    # 
+    # # Actual data
+    # sd.resi[i]<-sqrt(p[i]*(1-p[i])) +0.5
+    # E[i]<-(y[i]-p[i])/ sd.resi[i]
+    # E2[i] <- pow(E[i],2)
+    # 
+    # # Replicate data
+    # M.new[i]~dgamma(y[i], rate[i],shape[i])
+    # E.new[i]<-(M.new[i]-p[i])/sd.resi[i]
+    # E2.new[i] <- pow(E.new[i], 2)
+    #}
+    
+    #fit <- sum(E2[])              ### Sum up squared residuals for actual data set
+    #fit.new <- sum(E2.new[])      ### Sum up squared residuals for replicate data sets
+    
+    
+    
+    } ## end model
+    
+    

@@ -17,7 +17,7 @@
 
     # PRIOR FOR NEG BIN RATE
     r <- exp(logalpha)
-    logalpha ~ dnorm(0,0.001)
+    logalpha ~ dunif(0,50)
     
     
     # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -36,13 +36,14 @@
     for(i in 1:N){
 
       y[i] ~ dnegbin(p[i],r)
-      p[i] <- r/r+lamda[i]*(1-z[i])
+      #p[i] <- r/(r+lamda[i]*(1-z[i]))
+      p[i] <- r/(r+lamda[i])    ## negative binomial without zero-inflation
     
       # define the zero-inflation model, where psi is the probability of any fish being caught
       # used a complementary log link function to incorporate effort offset
-      psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
-      mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
-      z[i]~dbern(psi[i])
+      # psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
+      # mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+      # z[i]~dbern(psi[i])
 
       # define the negative binomial regression model for abundance
       log(lamda[i]) <- log(eff[i]) + intercept.abund[loc[i],year[i]] + treat.abund*TREATMENT[i] + abund.trip[ind[i]]
@@ -56,7 +57,7 @@
     for(i in 1:N){
     
     # Actual data
-    sd.resi[i]<-sqrt(p[i]*(1-psi[i])) +0.5
+    sd.resi[i]<-sqrt(p[i]*(1-p[i])) +0.5
     E[i]<-(y[i]-p[i])/ sd.resi[i]
     E2[i] <- pow(E[i],2)
     
