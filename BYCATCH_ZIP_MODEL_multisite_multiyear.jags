@@ -13,7 +13,7 @@ model{
   
   treat.occu ~ dnorm(0, 0.01)
   treat.abund ~ dnorm(0, 0.01)
-  effort.offset ~ dnorm(0, 0.01)
+  #effort.offset ~ dnorm(0, 0.01)
 
 
   # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -34,7 +34,7 @@ model{
     # define the logistic regression model, where psi is the probability of bycatch occurring at all
     # used a complementary log link function to incorporate effort offset
     psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
-    mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    mu[i]<-intercept.occu[loc[i],year[i]] + eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
     z[i]~dbern(psi[i])
     
     # define the poisson regression model for abundance and multiply with bycatch probability

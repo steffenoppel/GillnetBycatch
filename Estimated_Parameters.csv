@@ -1,105 +1,15 @@
 Mitigation,Response,Parameter,mean,lcl,ucl
-NetPanels,TOT,treatment effect on catch occurrence,0.0184051661470678,-19.2165739380877,19.205512072814
-NetPanels,TOT,treatment effect on catch rate,0.0214549145924544,-19.3751504520318,19.4244200612178
-NetPanels,TOT,treatment inclusion on 'occurrence',0.0849766666666667,0,1
-NetPanels,TOT,treatment inclusion on 'rate',0.0231566666666667,0,0
-NetPanels,LTDU,treatment effect on catch occurrence,6.98849497453535,-7.26623806742507,16.3520474578834
-NetPanels,LTDU,treatment effect on catch rate,0.339626531214127,-18.3888380371596,18.3170916079871
-NetPanels,LTDU,treatment inclusion on 'occurrence',0.896506666666667,0,1
-NetPanels,LTDU,treatment inclusion on 'rate',0.250106666666667,0,1
-NetPanels,LTDU,treatment effect on catch occurrence,6.98849497453535,-7.26623806742507,16.3520474578834
-NetPanels,LTDU,treatment effect on catch rate,0.339626531214127,-18.3888380371596,18.3170916079871
-NetPanels,LTDU,treatment inclusion on 'occurrence',0.896506666666667,0,1
-NetPanels,LTDU,treatment inclusion on 'rate',0.250106666666667,0,1
-NetPanels,TOT,treatment effect on catch occurrence,0.0441109923806285,-19.2097544970391,19.270244072779
-NetPanels,TOT,treatment effect on catch rate,0.00701857511743432,-19.5987302788369,19.5000156601844
-NetPanels,TOT,treatment inclusion on 'occurrence',0.09181,0,1
-NetPanels,TOT,treatment inclusion on 'rate',0.02363,0,0
-NetPanels,LTDU,treatment effect on catch occurrence,6.74144683171825,-8.660341466431,16.1594002983049
-NetPanels,LTDU,treatment effect on catch rate,0.499850428071091,-18.4567232004027,18.4093826879418
-NetPanels,LTDU,treatment inclusion on 'occurrence',0.873436666666667,0,1
-NetPanels,LTDU,treatment inclusion on 'rate',0.272306666666667,0,1
-NetPanels,VESC,treatment effect on catch occurrence,0.00729908892645516,-19.044275546608,19.0059037744326
-NetPanels,VESC,treatment effect on catch rate,-0.558092925509006,-16.898146733045,15.7201920912705
-NetPanels,VESC,treatment inclusion on 'occurrence',0.113086666666667,0,1
-NetPanels,VESC,treatment inclusion on 'rate',0.461956666666667,0,1
-WhiteLights,TOT,treatment effect on catch occurrence,0.00997369576492983,-19.247820041149,19.2550951507874
-WhiteLights,TOT,treatment effect on catch rate,0.839875572510859,-17.8775504595416,20.0015910723552
-WhiteLights,TOT,treatment inclusion on 'occurrence',0.0691366666666667,0,1
-WhiteLights,TOT,treatment inclusion on 'rate',0.276546666666667,0,1
-WhiteLights,LTDU,treatment effect on catch occurrence,0.0544693840933706,-19.2500637552364,19.3783275484316
-WhiteLights,LTDU,treatment effect on catch rate,0.575959990810204,-17.3038105769882,15.7009406608469
-WhiteLights,LTDU,treatment inclusion on 'occurrence',0.07467,0,1
-WhiteLights,LTDU,treatment inclusion on 'rate',0.493486666666667,0,1
-GreenLights,TOT,treatment effect on catch occurrence,-0.401976942628376,-18.5767831302248,18.4712216958111
-GreenLights,TOT,treatment effect on catch rate,0.000930814154564552,-19.5126681480183,19.4784764175217
-GreenLights,TOT,treatment inclusion on 'occurrence',0.21568,0,1
-GreenLights,TOT,treatment inclusion on 'rate',0.0362166666666667,0,1
-GreenLights,LTDU,treatment effect on catch occurrence,-0.333488576309105,-18.8110556822357,18.8070153197646
-GreenLights,LTDU,treatment effect on catch rate,-0.0662528988222637,-19.2040345774591,19.1173389516569
-GreenLights,LTDU,treatment inclusion on 'occurrence',0.177643333333333,0,1
-GreenLights,LTDU,treatment inclusion on 'rate',0.10525,0,1
-NetPanels,TOT,treatment effect on catch occurrence,0.018719132712765,-19.2751255438832,19.2601152065965
-NetPanels,TOT,treatment effect on catch rate,-0.00388842507357501,-19.6640705732038,19.5437406885952
-NetPanels,TOT,treatment inclusion on 'occurrence',0.0908133333333333,0,1
-NetPanels,TOT,treatment inclusion on 'rate',0.02323,0,0
-NetPanels,LTDU,treatment effect on catch occurrence,6.92210041780692,-6.73931779081287,16.1778913686476
-NetPanels,LTDU,treatment effect on catch rate,0.295362916768246,-18.5335439568735,18.5207621011013
-NetPanels,LTDU,treatment inclusion on 'occurrence',0.898483333333333,0,1
-NetPanels,LTDU,treatment inclusion on 'rate',0.227883333333333,0,1
-NetPanels,VESC,treatment effect on catch occurrence,0.0375720165449574,-19.1867523689022,19.0879847975848
-NetPanels,VESC,treatment effect on catch rate,-0.344199614012873,-16.7083681101805,16.622141132125
-NetPanels,VESC,treatment inclusion on 'occurrence',0.110956666666667,0,1
-NetPanels,VESC,treatment inclusion on 'rate',0.482663333333333,0,1
-WhiteLights,TOT,treatment effect on catch occurrence,0.0145962104489989,-19.2480534759186,19.309101391729
-WhiteLights,TOT,treatment effect on catch rate,0.333067378278198,-18.0660934675326,18.0628721785117
-WhiteLights,TOT,treatment inclusion on 'occurrence',0.06997,0,1
-WhiteLights,TOT,treatment inclusion on 'rate',0.29495,0,1
-WhiteLights,LTDU,treatment effect on catch occurrence,0.0471538205003805,-19.2197196742722,19.1897793243806
-WhiteLights,LTDU,treatment effect on catch rate,0.729294165605641,-16.7523907834343,16.8135982243083
-WhiteLights,LTDU,treatment inclusion on 'occurrence',0.07205,0,1
-WhiteLights,LTDU,treatment inclusion on 'rate',0.463153333333333,0,1
-GreenLights,TOT,treatment effect on catch occurrence,-0.388237571508399,-18.4821941677894,18.4979941978532
-GreenLights,TOT,treatment effect on catch rate,-0.00967311536101636,-19.5045581845127,19.407732202226
-GreenLights,TOT,treatment inclusion on 'occurrence',0.219803333333333,0,1
-GreenLights,TOT,treatment inclusion on 'rate',0.03417,0,1
-GreenLights,LTDU,treatment effect on catch occurrence,-0.17605131778638,-18.871237433187,18.7817862175371
-GreenLights,LTDU,treatment effect on catch rate,-0.0256323946174429,-19.1355588403047,19.1806994054235
-GreenLights,LTDU,treatment inclusion on 'occurrence',0.150743333333333,0,1
-GreenLights,LTDU,treatment inclusion on 'rate',0.10161,0,1
-NetPanels,FISH,treatment effect on catch occurrence,2.83185317962792,-17.139026118108,21.0111454064216
-NetPanels,FISH,treatment effect on catch rate,0.0481922179679585,-19.5815278604486,19.7337747718086
-NetPanels,FISH,treatment inclusion on 'occurrence',0.420016666666667,0,1
-NetPanels,FISH,treatment inclusion on 'rate',0.00578,0,0
-WhiteLights,FISH,treatment effect on catch occurrence,-0.334937761649519,-19.1216189196806,19.2740945045116
-WhiteLights,FISH,treatment effect on catch rate,0.516091659778973,-19.0915169364913,19.1256303558125
-WhiteLights,FISH,treatment inclusion on 'occurrence',0.11905,0,1
-WhiteLights,FISH,treatment inclusion on 'rate',0.0884666666666669,0,1
-GreenLights,FISH,treatment effect on catch occurrence,-1.66901738759988,-11.5004099496365,11.619250506887
-GreenLights,FISH,treatment effect on catch rate,-0.0159835297093901,-19.5200627775905,19.4348321197037
-GreenLights,FISH,treatment inclusion on 'occurrence',0.796696666666667,0,1
-GreenLights,FISH,treatment inclusion on 'rate',0.01292,0,0
-NetPanels,TOT,treatment effect on catch occurrence,0.269129354662011,-18.8454567051227,18.7766739986306
-NetPanels,TOT,treatment effect on catch rate,-0.00727467669336372,-19.3897238148513,19.4900079747475
-NetPanels,TOT,treatment inclusion on 'occurrence',0.16345,0,1
-NetPanels,TOT,treatment inclusion on 'rate',0.0286266666666667,0,1
-NetPanels,LTDU,treatment effect on catch occurrence,7.04619869370303,-10.1653110020059,18.3784273941266
-NetPanels,LTDU,treatment effect on catch rate,0.319144706459579,-18.2400327357811,17.9533292238823
-NetPanels,LTDU,treatment inclusion on 'occurrence',0.839096666666667,0,1
-NetPanels,LTDU,treatment inclusion on 'rate',0.277093333333333,0,1
-NetPanels,VESC,treatment effect on catch occurrence,0.211637402110226,-18.7607137697788,18.6685333539045
-NetPanels,VESC,treatment effect on catch rate,-0.171572359433242,-18.5314777307917,18.6317924584265
-NetPanels,VESC,treatment inclusion on 'occurrence',0.171673333333333,0,1
-NetPanels,VESC,treatment inclusion on 'rate',0.245463333333333,0,1
-NetPanels,FISH,treatment effect on catch occurrence,3.2344075126117,-16.6561230765777,20.1836902860956
-NetPanels,FISH,treatment effect on catch rate,0.00315253942902245,-19.6390570002097,19.5985014903755
-NetPanels,FISH,treatment inclusion on 'occurrence',0.475136666666667,0,1
-NetPanels,FISH,treatment inclusion on 'rate',0.00596,0,0
-WhiteLights,FISH,treatment effect on catch occurrence,-0.0451299219624971,-19.339250193163,19.3914701878601
-WhiteLights,FISH,treatment effect on catch rate,0.0808148268088003,-19.430501450189,19.4658895629233
-WhiteLights,FISH,treatment inclusion on 'occurrence',0.0498233333333333,0,1
-WhiteLights,FISH,treatment inclusion on 'rate',0.0427533333333333,0,1
-GreenLights,FISH,treatment effect on catch occurrence,-1.76320736374731,-10.8549155093961,10.838023923331
-GreenLights,FISH,treatment effect on catch rate,-0.0270847754137035,-19.7005784977223,19.5587540470579
-GreenLights,FISH,treatment inclusion on 'occurrence',0.819426666666667,0,1
-GreenLights,FISH,treatment inclusion on 'rate',0.0147366666666667,0,0
+NetPanels,TOT,treatment effect on catch occurrence,4.09036092377091,-0.809474071647655,12.9380115633137
+NetPanels,TOT,treatment effect on catch rate,-0.349150820818878,-0.964729983322688,0.238650619214208
+NetPanels,LTDU,treatment effect on catch occurrence,4.67363619959037,-6.97972072159429,15.527395868539
+NetPanels,LTDU,treatment effect on catch rate,1.40332279237183,-0.29946440653541,3.32486142261311
+NetPanels,VESC,treatment effect on catch occurrence,5.93364068077127,-0.399097483030312,18.9581179345623
+NetPanels,VESC,treatment effect on catch rate,-1.07723360306132,-1.89454021220524,-0.292365316009442
+WhiteLights,TOT,treatment effect on catch occurrence,1.84692462827867,-7.06473759041521,10.8582468816444
+WhiteLights,TOT,treatment effect on catch rate,0.931697349113333,-0.164701904752123,2.21020628181505
+WhiteLights,LTDU,treatment effect on catch occurrence,0.270336017011711,-9.79046553466778,9.6705241044129
+WhiteLights,LTDU,treatment effect on catch rate,1.37335090891955,0.0759679018834048,2.74770701739867
+GreenLights,TOT,treatment effect on catch occurrence,-1.46685299484826,-5.99753821009024,2.10111094608678
+GreenLights,TOT,treatment effect on catch rate,-0.0694384090316358,-0.640824759648662,0.504890229496446
+GreenLights,LTDU,treatment effect on catch occurrence,1.3036675233112,-5.94974253024572,12.7985785524647
+GreenLights,LTDU,treatment effect on catch rate,-0.50234069000985,-1.18011821292796,0.289175054284296

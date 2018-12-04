@@ -11,6 +11,7 @@
 ### removed model selection coefficients
 
 ### removed fish catch analysis on 3 Dec 2018 - extra script 'Fish_catch_analysis.r'
+### scaled 'effort' and removed parameter on 4 Dec 2018 after models did not converge
 
 
 ### Load libraries
@@ -51,19 +52,21 @@ netpanels<- netpanels %>%
   mutate(SetID=str_replace(string=SetID, pattern="D", replacement="C"))  %>% ### paired sets are called C and D but we need them to have the same ID
   mutate(SetLocation=ifelse(SetBlock<16,"Spit","Mainland")) %>%
   mutate(TotalCatch=ifelse(Year==16,TotalCatch/1000,TotalCatch)) %>%
-  mutate(effort=NetLength*SoakTime)
+  mutate(effort=NetLength*SoakTime) %>%
+  mutate(effort=effort/max(effort))
 
 whitelights<- whitelights %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%  ### modify the various description of Treatment and B//W Panels
   mutate(SetID=str_replace(string=SetID, pattern="B", replacement="A")) %>%  ### paired sets are called A and B but we need them to have the same ID
   mutate(TotalCatch=TotalCatch/1000) %>%    ### fish catch in kg rather than gram
-  mutate(effort=NetLength*SoakTime)
+  mutate(effort=NetLength*SoakTime)%>%
+  mutate(effort=effort/max(effort))
 
 greenlights<- greenlights %>%
   filter(!SetID %in% c("501D")) %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%
-
-  mutate(ZeroTrips=0) %>% mutate(effort=NetLength*SoakTime)
+  mutate(ZeroTrips=0) %>% mutate(effort=NetLength*SoakTime)%>%
+  mutate(effort=effort/max(effort))
 
 ### for greenlights there is no clear guidance which pairs belong together, and there are up to 6 sets per trip
 for (tr in unique(greenlights$TripID)){
@@ -110,15 +113,6 @@ for (tr in unique(whitelights$TripID)){
 }
 
 
-
-### SENSE CHECK DISTRIBUTION OF FISH DATA
-
-hist(greenlights$FishCatch) ### neg bin
-hist(netpanels$TotalCatch) ### weird data outliers
-hist(whitelights$TotalCatch) ### neg bin
-
-
-
 ### FIND OUTLIER IN NETPANEL DATA
 
 netpanels %>% filter(TripID==210)
@@ -147,7 +141,7 @@ NP_TOT_dat<-list(y = netpanels$TotalBycatch,
                  ind=tripID,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(netpanels$Treatment=="Control",0,1),
-                 eff = netpanels$effort)
+                 eff = as.numeric(netpanels$effort))
 
 NP_LTDU_dat<-list(y = netpanels$LTDTotalBycatch,
                   loc=loc,
@@ -156,7 +150,7 @@ NP_LTDU_dat<-list(y = netpanels$LTDTotalBycatch,
                   ind=tripID,
                   ntrips=length(unique(tripID)),
                   TREATMENT=ifelse(netpanels$Treatment=="Control",0,1),
-                  eff = netpanels$effort)
+                  eff = as.numeric(netpanels$effort))
 
 NP_VESC_dat<-list(y = netpanels$VSTotalBycatch,
                   loc=loc,
@@ -165,7 +159,7 @@ NP_VESC_dat<-list(y = netpanels$VSTotalBycatch,
                   ind=tripID,
                   ntrips=length(unique(tripID)),
                   TREATMENT=ifelse(netpanels$Treatment=="Control",0,1),
-                  eff = netpanels$effort)
+                  eff = as.numeric(netpanels$effort))
 
 
 
@@ -179,7 +173,7 @@ WL_TOT_dat<-list(y = whitelights$TotalBycatch,
                 ind=tripID,
                 ntrips=length(unique(tripID)),
                 TREATMENT=ifelse(whitelights$Treatment=="Control",0,1),
-                eff = whitelights$effort)
+                eff = as.numeric(whitelights$effort))
 
 WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
                  #z= whitelights$ZeroTrips,
@@ -187,7 +181,7 @@ WL_LTDU_dat<-list(y = whitelights$LTDTotalBycatch,
                  ind=tripID,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(whitelights$Treatment=="Control",0,1),
-                 eff = whitelights$effort)
+                 eff = as.numeric(whitelights$effort))
 
 
 ### GREEN LIGHTS DATA - 3 models
@@ -203,7 +197,7 @@ GL_TOT_dat<-list(y = greenlights$TotalBycatch,
                 ind=tripID,
                 ntrips=length(unique(tripID)),
                 TREATMENT=ifelse(greenlights$Treatment=="Control",0,1),
-                eff = greenlights$effort)
+                eff = as.numeric(greenlights$effort))
 GL_LTDU_dat<-list(y = greenlights$LTDTotalBycatch,
                  loc=loc,
                  year=year,			
@@ -211,7 +205,7 @@ GL_LTDU_dat<-list(y = greenlights$LTDTotalBycatch,
                  ind=tripID,
                  ntrips=length(unique(tripID)),
                  TREATMENT=ifelse(greenlights$Treatment=="Control",0,1),
-                 eff = greenlights$effort)
+                 eff = as.numeric(greenlights$effort))
 
 
 
@@ -244,7 +238,7 @@ model{
   
   treat.occu ~ dnorm(0, 0.01)
   treat.abund ~ dnorm(0, 0.01)
-  effort.offset ~ dnorm(0, 0.01)
+  #effort.offset ~ dnorm(0, 0.01)
 
 
   # RANDOM TRIP EFFECTS FOR OCCURRENCE AND ABUNDANCE
@@ -265,7 +259,7 @@ model{
     # define the logistic regression model, where psi is the probability of bycatch occurring at all
     # used a complementary log link function to incorporate effort offset
     psi[i] <- 1 - exp(-exp(mu[i]))   ### replaced     logit(psi[i])
-    mu[i]<-intercept.occu[loc[i],year[i]] + effort.offset*eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
+    mu[i]<-intercept.occu[loc[i],year[i]] + eff[i] + treat.occu*TREATMENT[i] + occ.trip[ind[i]]
     z[i]~dbern(psi[i])
     
     # define the poisson regression model for abundance and multiply with bycatch probability
@@ -323,9 +317,9 @@ inits <- function(){list(intercept.occu = rnorm(0, 10),
 params <- c("treat.occu","treat.abund","fit","fit.new","phi")
 
 ##### MCMC settings
-ni <- 150000
+ni <- 300000
 nt <- 1
-nb <- 75000
+nb <- 15000
 nc <- 4
 
 
@@ -429,7 +423,7 @@ fwrite(ANALYSIS_SUMMARY,"Model_run_summary.csv")
 
 
 
-#pdf("Fig2_gillnet_bycatch_estimates.pdf", width=6, height=9)
+pdf("Fig3_gillnet_bycatch_estimates.pdf", width=6, height=9)
 
 PLOT_SUMMARY %>% mutate(Net=ifelse(Treatment==1,'Treatment','Control')) %>%
 
