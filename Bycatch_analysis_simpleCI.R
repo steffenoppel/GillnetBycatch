@@ -249,10 +249,9 @@ OUT7
 
 ### SET UP GREEN LIGHTS DATA ######
 
-gl.tot.diff<-whitelights %>% #filter(ZeroTrips==0) %>%
+gl.tot.diff<-greenlights %>%
   select(SetID,Treatment,TotalBycatch) %>%
   group_by(SetID) %>%
-  #filter(duplicated(Treatment))
   spread(Treatment,TotalBycatch) %>%
   mutate(diff=Control-Treatment)%>%
   filter(!is.na(diff))
@@ -273,7 +272,7 @@ OUT4
 
 
 
-gl.tot.diff<-whitelights %>% 
+gl.tot.diff<-greenlights %>% 
   select(SetID,Treatment,LTDTotalBycatch) %>%
   group_by(SetID) %>%
   spread(Treatment,LTDTotalBycatch) %>%
@@ -305,17 +304,20 @@ OUT5
 rbind(OUT1,OUT2,OUT3, OUT4,OUT5,OUT6,OUT7) %>%
   mutate(x=c(0.8,1,1.2,1.9,2.1,2.9,3.1)) %>%
 
-ggplot(aes(y=mean, x=x)) + geom_point(size=2)+
+ggplot(aes(y=mean, x=x, colour=target)) + geom_point(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
-  scale_y_continuous(limits=c(-1.5,1.5),breaks=seq(-1.5,1.5,0.3))+
+  scale_y_continuous(limits=c(-1,1),breaks=seq(-1,1,0.2))+
   scale_x_continuous(limits=c(0.5,3.5),breaks=c(1,2,3), labels=c("Net panels", "Green lights", "White Lights"))+
   geom_hline(yintercept=0) +
+  guides(colour=guide_legend(title="Species"))+
   xlab("Bycatch mitigation measure") +
   ylab("Decrease in seabird bycatch (birds / net)") +
   theme(panel.background=element_rect(fill="white", colour="black"), 
         axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=20), 
-        strip.text=element_text(size=18, color="black"), 
+        strip.text=element_text(size=18, color="black"),
+        legend.text=element_text(size=14, color="black"),
+        legend.title=element_text(size=18, color="black"),  
         strip.background=element_rect(fill="white", colour="black"), 
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
