@@ -180,7 +180,7 @@ summary(wl.diff)
 
 
 ## bootstrap test
-boot.samples <- matrix(sample(wl.diff$diff, size = 10000 * nrow(np.diff), replace = TRUE),10000, nrow(np.diff))
+boot.samples <- matrix(sample(wl.diff$diff, size = 10000 * nrow(wl.diff), replace = TRUE),10000, nrow(wl.diff))
 boot.statistics <- apply(boot.samples, 1, mean)
 ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
   geom_histogram(binwidth=0.05,aes(y=..density..)) +
@@ -210,7 +210,7 @@ summary(gl.diff)
 
 
 ## bootstrap test
-boot.samples <- matrix(sample(gl.diff$diff, size = 10000 * nrow(np.diff), replace = TRUE),10000, nrow(np.diff))
+boot.samples <- matrix(sample(gl.diff$diff, size = 10000 * nrow(gl.diff), replace = TRUE),10000, nrow(gl.diff))
 boot.statistics <- apply(boot.samples, 1, mean)
 ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
   geom_histogram(binwidth=0.05,aes(y=..density..)) +
