@@ -15,6 +15,8 @@
 
 ### FINALISED on 5 DEC 2018 by using 95% quantile and re-scaling output to mean effort
 
+### CHANGED SET_ID for greenlights based on Rory Crawford's comment on manuscript 7 Dec 2018
+
 
 ### Load libraries
 library(ggplot2)
@@ -112,12 +114,31 @@ for (tr in unique(whitelights$TripID)){
 }
 
 
+
+
+
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####     SIMPLE SAMPLE SIZE SUMMARIES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+#####
+#####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
+
+netpanels %>% group_by(Treatment) %>% summarise(all=sum(TotalBycatch),LTDU=sum(LTDTotalBycatch),VESC=sum(VSTotalBycatch))
+sum(netpanels$TotalBycatch)
+
 ### FIND OUTLIER IN NETPANEL DATA
 
 netpanels %>% filter(TripID==210)
 netpanels <- netpanels %>% filter(!SetID=="210A")   ## remove this set which caught 39 ducks!!
 
 
+
+
+greenlights %>% group_by(Treatment) %>% summarise(all=sum(TotalBycatch),LTDU=sum(LTDTotalBycatch))
+sum(greenlights$TotalBycatch)
+
+whitelights %>% group_by(Treatment) %>% summarise(all=sum(TotalBycatch),LTDU=sum(LTDTotalBycatch))
+sum(whitelights$TotalBycatch)
 
 
 
@@ -321,6 +342,7 @@ plotdat<-rbind(OUT1,OUT2,OUT3, OUT4,OUT5,OUT6,OUT7) %>%
 
 
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Output")
+fwrite(plotdat,"Bycatch_seabird_estimates_simple.csv")
 pdf("Fig4_bycatch_difference.pdf", width=9, height=6)
 
 
@@ -328,7 +350,7 @@ pdf("Fig4_bycatch_difference.pdf", width=9, height=6)
 ggplot(plotdat, aes(y=mean, x=x, colour=target)) + geom_point(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
   scale_y_continuous(limits=c(-1,3.2),breaks=seq(-1,3.2,0.6))+
-  scale_x_continuous(limits=c(0.5,3.5),breaks=c(1,2,3), labels=c("Net panels", "Green lights", "White Lights"))+
+  scale_x_continuous(limits=c(0.5,3.5),breaks=c(1,2,3), labels=c("Net panels", "Green lights", "White lights"))+
   geom_hline(yintercept=0) +
   guides(colour=guide_legend(title="Species"))+
   xlab("Bycatch mitigation measure") +
