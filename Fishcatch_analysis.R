@@ -142,7 +142,7 @@ np.diff<-netpanels %>%
   group_by(SetLocation,Year,SetID) %>%
   #filter(duplicated(Treatment))
   spread(Treatment,TotalCatch) %>%
-  mutate(diff=Control-Treatment) %>%
+  mutate(diff=Treatment-Control) %>%
   filter(!is.na(diff))
 
 hist(np.diff$diff)
@@ -155,12 +155,10 @@ boot.statistics <- apply(boot.samples, 1, mean)
 ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
   geom_histogram(binwidth=0.05,aes(y=..density..)) +
   geom_density(color="red")
-catch.se <- sd(boot.statistics)
-OUT1<-data.frame(trial="Net Panels", mean=mean(boot.statistics), lcl=mean(boot.statistics)-catch.se,ucl=mean(boot.statistics)+catch.se)
 
 ## convert to %
 controlmean<-mean(np.diff$Control,na.rm=T)
-OUT1<-data.frame(trial="Net Panels", mean=(mean(boot.statistics)/controlmean)*100, lcl=((mean(boot.statistics)-catch.se)/controlmean)*100,ucl=((mean(boot.statistics)+catch.se)/controlmean)*100)
+OUT1<-data.frame(trial="Net panels", mean=(mean(boot.statistics)/controlmean)*100, lcl=((quantile(boot.statistics,0.025))/controlmean)*100,ucl=((quantile(boot.statistics,0.975))/controlmean)*100)
 OUT1
 
 
@@ -173,7 +171,7 @@ wl.diff<-whitelights %>% #filter(ZeroTrips==0) %>%
   group_by(SetID) %>%
   #filter(duplicated(Treatment))
   spread(Treatment,TotalCatch) %>%
-  mutate(diff=Control-Treatment)%>%
+  mutate(diff=Treatment-Control)%>%
   filter(!is.na(diff))
 hist(wl.diff$diff)
 summary(wl.diff)
@@ -185,12 +183,10 @@ boot.statistics <- apply(boot.samples, 1, mean)
 ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
   geom_histogram(binwidth=0.05,aes(y=..density..)) +
   geom_density(color="red")
-catch.se <- sd(boot.statistics)
-OUT2<-data.frame(trial="White flashing lights", mean=mean(boot.statistics), lcl=mean(boot.statistics)-catch.se,ucl=mean(boot.statistics)+catch.se)
 
 ## convert to %
 controlmean<-mean(wl.diff$Control,na.rm=T)
-OUT2<-data.frame(trial="White flashing lights", mean=(mean(boot.statistics)/controlmean)*100, lcl=((mean(boot.statistics)-catch.se)/controlmean)*100,ucl=((mean(boot.statistics)+catch.se)/controlmean)*100)
+OUT2<-data.frame(trial="White lights", mean=(mean(boot.statistics)/controlmean)*100, lcl=((quantile(boot.statistics,0.025))/controlmean)*100,ucl=((quantile(boot.statistics,0.975))/controlmean)*100)
 OUT2
 
 
@@ -202,7 +198,7 @@ gl.diff<-greenlights %>% #filter(ZeroTrips==0) %>%
   group_by(SetBlock,Year,SetID) %>%
   #filter(duplicated(Treatment))
   spread(Treatment,FishCatch) %>%
-  mutate(diff=Control-Treatment)%>%
+  mutate(diff=Treatment-Control)%>%
   filter(!is.na(diff))
 hist(gl.diff$diff)
 summary(gl.diff)
@@ -215,12 +211,10 @@ boot.statistics <- apply(boot.samples, 1, mean)
 ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
   geom_histogram(binwidth=0.05,aes(y=..density..)) +
   geom_density(color="red")
-catch.se <- sd(boot.statistics)
-OUT3<-data.frame(trial="Green constant lights", mean=mean(boot.statistics), lcl=mean(boot.statistics)-catch.se,ucl=mean(boot.statistics)+catch.se)
 
 ## convert to %
 controlmean<-mean(gl.diff$Control,na.rm=T)
-OUT3<-data.frame(trial="Green constant lights", mean=(mean(boot.statistics)/controlmean)*100, lcl=((mean(boot.statistics)-catch.se)/controlmean)*100,ucl=((mean(boot.statistics)+catch.se)/controlmean)*100)
+OUT3<-data.frame(trial="Green lights", mean=(mean(boot.statistics)/controlmean)*100, lcl=((quantile(boot.statistics,0.025))/controlmean)*100,ucl=((quantile(boot.statistics,0.975))/controlmean)*100)
 OUT3
 
 
@@ -233,18 +227,19 @@ OUT3
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 
 
-setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch")
+setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Output")
+fwrite(rbind(OUT1,OUT3,OUT2),"FishCatch_estimates_simple.csv")
 pdf("Fig2_fish_catch_difference.pdf", width=9, height=6)
 
-ggplot(rbind(OUT1,OUT2,OUT3),aes(y=mean, x=trial)) + geom_point(size=2)+
+ggplot(rbind(OUT1,OUT3,OUT2),aes(y=mean, x=trial)) + geom_point(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
-  scale_y_continuous(limits=c(-20,20),breaks=seq(-20,20,5))+
+  scale_y_continuous(limits=c(-25,25),breaks=seq(-25,25,5))+
   geom_hline(yintercept=0) +
   xlab("Bycatch mitigation measure") +
-  ylab("Decrease in fish catch (%)") +
+  ylab("Change in fish catch (%)") +
   theme(panel.background=element_rect(fill="white", colour="black"), 
         axis.text=element_text(size=16, color="black"), 
-        axis.title=element_text(size=20), 
+        axis.title=element_text(size=18), 
         strip.text=element_text(size=18, color="black"), 
         strip.background=element_rect(fill="white", colour="black"), 
         panel.grid.major = element_blank(), 
