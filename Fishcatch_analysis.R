@@ -8,6 +8,8 @@
 
 ### included previous analyses at bottom of script, but sophisticated models were discontinied on 3 Dec 2018
 
+### REVISED INPUT DATA ON 19 Dec 2018 because effort did not consider multiple nets in set
+
 
 ### Load libraries
 library(ggplot2)
@@ -30,9 +32,9 @@ library(lubridate)
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\RawData")
 
 # Read the data from formatted CSV files (one for each mitigation trial)
-netpanels <- read.table("Netpanels_analysis_data.csv", header=T, sep=",")
-whitelights <- read.table("WhiteLights_analysis_data.csv", header=T, sep=",")
-greenlights <- read.table("GreenLights_analysis_data.csv", header=T, sep=",")
+netpanels <- read.table("Netpanels_analysis_data_revised.csv", header=T, sep=",")
+whitelights <- read.table("WhiteLights_analysis_data_revised.csv", header=T, sep=",")
+greenlights <- read.table("GreenLights_analysis_data_revised.csv", header=T, sep=",")
 
 
 
@@ -46,7 +48,7 @@ netpanels<- netpanels %>%
   mutate(SetID=str_replace(string=SetID, pattern="D", replacement="C"))  %>% ### paired sets are called C and D but we need them to have the same ID
   mutate(SetLocation=ifelse(SetBlock<16,"Spit","Mainland")) %>%
   mutate(TotalCatch=ifelse(Year==16,TotalCatch/1000,TotalCatch)) %>%
-  mutate(effort=NetLength*SoakTime) %>% filter(!TripID==501) %>%
+  mutate(effort=Total_Net_Length*SoakTime) %>% filter(!TripID==501) %>%
   mutate(CPUE2=TotalCatch/effort)
 summary(netpanels)
 
@@ -56,13 +58,12 @@ whitelights<- whitelights %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%  ### modify the various description of Treatment and B//W Panels
   mutate(SetID=str_replace(string=SetID, pattern="B", replacement="A")) %>%  ### paired sets are called A and B but we need them to have the same ID
   mutate(TotalCatch=TotalCatch/1000) %>%    ### fish catch in kg rather than gram
-  mutate(effort=NetLength*SoakTime)
+  mutate(effort=Total_Net_Length*SoakTime)
 
 greenlights<- greenlights %>%
   filter(!SetID %in% c("501D")) %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%
-
-  mutate(ZeroTrips=0) %>% mutate(effort=NetLength*SoakTime)
+  mutate(ZeroTrips=0) %>% mutate(effort=Total_Net_Length*SoakTime)
 
 ### for greenlights there is no clear guidance which pairs belong together, and there are up to 6 sets per trip
 for (tr in unique(greenlights$TripID)){
@@ -112,7 +113,7 @@ for (tr in unique(whitelights$TripID)){
 
 ### SENSE CHECK DISTRIBUTION OF FISH DATA
 
-hist(greenlights$FishCatch) ### neg bin
+hist(greenlights$TotalCatch) ### neg bin
 hist(netpanels$TotalCatch) ### weird data outliers
 hist(whitelights$TotalCatch) ### neg bin
 
@@ -194,10 +195,10 @@ OUT2
 ### SET UP GREEN LIGHTS DATA ######
 
 gl.diff<-greenlights %>% #filter(ZeroTrips==0) %>%
-  select(SetBlock,Year,SetID,Treatment,FishCatch) %>%
+  select(SetBlock,Year,SetID,Treatment,TotalCatch) %>%
   group_by(SetBlock,Year,SetID) %>%
   #filter(duplicated(Treatment))
-  spread(Treatment,FishCatch) %>%
+  spread(Treatment,TotalCatch) %>%
   mutate(diff=Treatment-Control)%>%
   filter(!is.na(diff))
 hist(gl.diff$diff)
@@ -229,7 +230,8 @@ OUT3
 
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Output")
 fwrite(rbind(OUT1,OUT3,OUT2),"FishCatch_estimates_simple.csv")
-pdf("Fig2_fish_catch_difference.pdf", width=9, height=6)
+pdf("Fig5_fish_catch_difference.pdf", width=9, height=6)
+jpeg("Fig5_fish_catch_difference.jpg", quality=100)
 
 ggplot(rbind(OUT1,OUT3,OUT2),aes(y=mean, x=trial)) + geom_point(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+

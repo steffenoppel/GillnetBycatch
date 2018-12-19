@@ -347,6 +347,7 @@ plotdat<-rbind(OUT1,OUT2,OUT3, OUT4,OUT5,OUT6,OUT7) %>%
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Output")
 fwrite(plotdat,"Bycatch_seabird_estimates_simple.csv")
 pdf("Fig4_bycatch_difference.pdf", width=9, height=6)
+#jpeg("Fig4_bycatch_difference.jpg", quality=100)
 
 
 
