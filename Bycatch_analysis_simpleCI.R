@@ -17,6 +17,8 @@
 
 ### CHANGED SET_ID for greenlights based on Rory Crawford's comment on manuscript 7 Dec 2018
 
+### REVISED INPUT DATA ON 19 Dec 2018 because effort did not consider multiple nets in set
+
 
 ### Load libraries
 library(ggplot2)
@@ -39,9 +41,9 @@ library(lubridate)
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\RawData")
 
 # Read the data from formatted CSV files (one for each mitigation trial)
-netpanels <- read.table("Netpanels_analysis_data.csv", header=T, sep=",")
-whitelights <- read.table("WhiteLights_analysis_data.csv", header=T, sep=",")
-greenlights <- read.table("GreenLights_analysis_data.csv", header=T, sep=",")
+netpanels <- read.table("Netpanels_analysis_data_revised.csv", header=T, sep=",")
+whitelights <- read.table("WhiteLights_analysis_data_revised.csv", header=T, sep=",")
+greenlights <- read.table("GreenLights_analysis_data_revised.csv", header=T, sep=",")
 
 
 
@@ -56,18 +58,18 @@ netpanels<- netpanels %>%
   mutate(SetID=str_replace(string=SetID, pattern="D", replacement="C"))  %>% ### paired sets are called C and D but we need them to have the same ID
   mutate(SetLocation=ifelse(SetBlock<16,"Spit","Mainland")) %>%
   mutate(TotalCatch=ifelse(Year==16,TotalCatch/1000,TotalCatch)) %>%
-  mutate(effort=NetLength*SoakTime) %>% filter(!TripID==501)
+  mutate(effort=Total_Net_Length*SoakTime) %>% filter(!TripID==501)
 
 whitelights<- whitelights %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%  ### modify the various description of Treatment and B//W Panels
   mutate(SetID=str_replace(string=SetID, pattern="B", replacement="A")) %>%  ### paired sets are called A and B but we need them to have the same ID
   mutate(TotalCatch=TotalCatch/1000) %>%    ### fish catch in kg rather than gram
-  mutate(effort=NetLength*SoakTime)
+  mutate(effort=Total_Net_Length*SoakTime)
 
 greenlights<- greenlights %>%
   filter(!SetID %in% c("501D")) %>%
   mutate(Treatment=ifelse(Treatment=="Control","Control","Treatment")) %>%
-  mutate(ZeroTrips=0) %>% mutate(effort=NetLength*SoakTime)
+  mutate(ZeroTrips=0) %>% mutate(effort=Total_Net_Length*SoakTime)
 
 ### for greenlights there is no clear guidance which pairs belong together, and there are up to 6 sets per trip
 for (tr in unique(greenlights$TripID)){
@@ -113,6 +115,7 @@ for (tr in unique(whitelights$TripID)){
   whitelights$ZeroTrips[whitelights$TripID==tr]<-ifelse(sum(x$TotalBycatch)>0,1,0)
 }
 
+head(greenlights)
 
 
 
@@ -335,7 +338,7 @@ OUT5
 plotdat<-rbind(OUT1,OUT2,OUT3, OUT4,OUT5,OUT6,OUT7) %>%
   mutate(x=c(0.8,1,1.2,1.9,2.1,2.9,3.1)) %>%
   mutate(effort=c(rep(mean(netpanels$effort),3),rep(mean(greenlights$effort),2),rep(mean(whitelights$effort),2))) %>%
-  mutate(mean=(mean/effort)*100,lcl=(lcl/effort)*100,ucl=(ucl/effort)*100)
+  mutate(mean=(mean/effort)*1000,lcl=(lcl/effort)*1000,ucl=(ucl/effort)*1000)
   
   
 
@@ -349,12 +352,12 @@ pdf("Fig4_bycatch_difference.pdf", width=9, height=6)
 
 ggplot(plotdat, aes(y=mean, x=x, colour=target)) + geom_point(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
-  scale_y_continuous(limits=c(-1,3.2),breaks=seq(-1,3.2,0.6))+
+  scale_y_continuous(limits=c(-1,4),breaks=seq(-1,4,0.5))+
   scale_x_continuous(limits=c(0.5,3.5),breaks=c(1,2,3), labels=c("Net panels", "Green lights", "White lights"))+
   geom_hline(yintercept=0) +
   guides(colour=guide_legend(title="Species"))+
   xlab("Bycatch mitigation measure") +
-  ylab("Change in seabird bycatch (birds / 100 net m * day)") +
+  ylab("Change in seabird bycatch (birds / 1000 net m * day)") +
   theme(panel.background=element_rect(fill="white", colour="black"), 
         axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=18), 
