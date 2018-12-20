@@ -18,6 +18,7 @@
 ### CHANGED SET_ID for greenlights based on Rory Crawford's comment on manuscript 7 Dec 2018
 
 ### REVISED INPUT DATA ON 19 Dec 2018 because effort did not consider multiple nets in set
+## modified to include reporting of mean bycatch rates from bootstrap
 
 
 ### Load libraries
@@ -177,6 +178,16 @@ ggplot(data.frame(meanDifference = boot.statistics),aes(x=meanDifference)) +
 OUT1<-data.frame(trial="Net Panels", target="All seabirds", mean=mean(boot.statistics),
                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(np.tot.diff$Control, size = 10000 * nrow(np.tot.diff), replace = TRUE),10000, nrow(np.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE1<-data.frame(trial="Net Panels", target="All seabirds", treatment="Control",mean=mean(boot.statistics),
+                 lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(np.tot.diff$Treatment, size = 10000 * nrow(np.tot.diff), replace = TRUE),10000, nrow(np.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE1<-rbind(RATE1,data.frame(trial="Net Panels", target="All seabirds", treatment="Treatment",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE1
 ## convert to %
 # controlmean<-mean(np.tot.diff$Control,na.rm=T)
 # OUT1<-data.frame(trial="Net Panels", mean=(mean(boot.statistics)/controlmean)*100, lcl=((mean(boot.statistics)-catch.se)/controlmean)*100,ucl=((mean(boot.statistics)+catch.se)/controlmean)*100)
@@ -200,10 +211,24 @@ boot.statistics <- apply(boot.samples, 1, mean)
 catch.se <- sd(boot.statistics)
 OUT2<-data.frame(trial="Net Panels", target="LTDU", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 
+
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(np.ltdu.diff$Control, size = 10000 * nrow(np.ltdu.diff), replace = TRUE),10000, nrow(np.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE2<-data.frame(trial="Net Panels", target="LTDU", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(np.ltdu.diff$Treatment, size = 10000 * nrow(np.ltdu.diff), replace = TRUE),10000, nrow(np.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE2<-rbind(RATE2,data.frame(trial="Net Panels", target="LTDU", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE2
 ## convert to %
 # controlmean<-mean(np.ltdu.diff$Control,na.rm=T)
 # OUT2<-data.frame(trial="Net Panels", mean=(mean(boot.statistics)/controlmean)*100, lcl=((mean(boot.statistics)-catch.se)/controlmean)*100,ucl=((mean(boot.statistics)+catch.se)/controlmean)*100)
 OUT2
+
+
+#### VESC BYCATCH ########
 
 
 np.vesc.diff<-netpanels %>%
@@ -219,6 +244,21 @@ boot.samples <- matrix(sample(np.vesc.diff$diff, size = 10000 * nrow(np.vesc.dif
 boot.statistics <- apply(boot.samples, 1, mean)
 catch.se <- sd(boot.statistics)
 OUT3<-data.frame(trial="Net Panels", target="VESC", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+
+
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(np.vesc.diff$Control, size = 10000 * nrow(np.vesc.diff), replace = TRUE),10000, nrow(np.vesc.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE3<-data.frame(trial="Net Panels", target="vesc", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(np.vesc.diff$Treatment, size = 10000 * nrow(np.vesc.diff), replace = TRUE),10000, nrow(np.vesc.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE3<-rbind(RATE3,data.frame(trial="Net Panels", target="vesc", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE3
+
+
+
 
 ## convert to %
 # controlmean<-mean(np.vesc.diff$Control,na.rm=T)
@@ -257,6 +297,16 @@ catch.se <- sd(boot.statistics)
 OUT6<-data.frame(trial="White flashing lights", target="All seabirds", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 OUT6
 
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(wl.tot.diff$Control, size = 10000 * nrow(wl.tot.diff), replace = TRUE),10000, nrow(wl.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE6<-data.frame(trial="White flashing lights", target="All seabirds", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(wl.tot.diff$Treatment, size = 10000 * nrow(wl.tot.diff), replace = TRUE),10000, nrow(wl.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE6<-rbind(RATE6,data.frame(trial="White flashing lights", target="All seabirds", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE6
 
 
 #### LTDU BYCATCH ########
@@ -276,6 +326,20 @@ boot.statistics <- apply(boot.samples, 1, mean)
 catch.se <- sd(boot.statistics)
 OUT7<-data.frame(trial="White flashing lights", target="LTDU", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 OUT7
+
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(wl.ltdu.diff$Control, size = 10000 * nrow(wl.ltdu.diff), replace = TRUE),10000, nrow(wl.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE7<-data.frame(trial="White flashing lights", target="LTDU", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(wl.ltdu.diff$Treatment, size = 10000 * nrow(wl.ltdu.diff), replace = TRUE),10000, nrow(wl.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE7<-rbind(RATE7,data.frame(trial="White flashing lights", target="LTDU", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE7
+
+
+
 
 
 ###################################
@@ -303,25 +367,47 @@ catch.se <- sd(boot.statistics)
 OUT4<-data.frame(trial="Green constant lights", target="All seabirds", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 OUT4
 
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(gl.tot.diff$Control, size = 10000 * nrow(gl.tot.diff), replace = TRUE),10000, nrow(gl.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE4<-data.frame(trial="Green constant lights", target="All seabirds", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(gl.tot.diff$Treatment, size = 10000 * nrow(gl.tot.diff), replace = TRUE),10000, nrow(gl.tot.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE4<-rbind(RATE4,data.frame(trial="Green constant lights", target="All seabirds", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE4
+
 
 
 #### LTDU BYCATCH ########
 
-gl.tot.diff<-greenlights %>% 
+gl.ltdu.diff<-greenlights %>% 
   select(SetID,Treatment,LTDTotalBycatch) %>%
   group_by(SetID) %>%
   spread(Treatment,LTDTotalBycatch) %>%
   mutate(diff=Treatment-Control)%>%
   filter(!is.na(diff))
-summary(gl.tot.diff)
+summary(gl.ltdu.diff)
 
 
 ## bootstrap test
-boot.samples <- matrix(sample(gl.tot.diff$diff, size = 10000 * nrow(gl.tot.diff), replace = TRUE),10000, nrow(gl.tot.diff))
+boot.samples <- matrix(sample(gl.ltdu.diff$diff, size = 10000 * nrow(gl.ltdu.diff), replace = TRUE),10000, nrow(gl.ltdu.diff))
 boot.statistics <- apply(boot.samples, 1, mean)
 catch.se <- sd(boot.statistics)
 OUT5<-data.frame(trial="Green constant lights", target="LTDU", mean=mean(boot.statistics),                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
 OUT5
+
+## get bootstrapped mean and CI for bycatch rate
+boot.samples <- matrix(sample(gl.ltdu.diff$Control, size = 10000 * nrow(gl.ltdu.diff), replace = TRUE),10000, nrow(gl.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE5<-data.frame(trial="Green constant lights", target="LTDU", treatment="Control",mean=mean(boot.statistics),
+                  lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975))
+boot.samples <- matrix(sample(gl.ltdu.diff$Treatment, size = 10000 * nrow(gl.ltdu.diff), replace = TRUE),10000, nrow(gl.ltdu.diff))
+boot.statistics <- apply(boot.samples, 1, mean)
+RATE5<-rbind(RATE5,data.frame(trial="Green constant lights", target="LTDU", treatment="Treatment",mean=mean(boot.statistics),
+                              lcl=quantile(boot.statistics,0.025),ucl=quantile(boot.statistics,0.975)))
+RATE5
 
 
 
@@ -340,12 +426,19 @@ plotdat<-rbind(OUT1,OUT2,OUT3, OUT4,OUT5,OUT6,OUT7) %>%
   mutate(effort=c(rep(mean(netpanels$effort),3),rep(mean(greenlights$effort),2),rep(mean(whitelights$effort),2))) %>%
   mutate(mean=(mean/effort)*1000,lcl=(lcl/effort)*1000,ucl=(ucl/effort)*1000)
   
-  
+ 
+##### PRESENT OUTPUT SCALED TO TYPICAL NET EFFORT TO PRESENT AS BIRDS / NET m / DAY
+
+ratedat<-rbind(RATE1,RATE2,RATE3, RATE4,RATE5,RATE6,RATE7) %>%
+  mutate(effort=c(rep(mean(netpanels$effort),6),rep(mean(greenlights$effort),4),rep(mean(whitelights$effort),4))) %>%
+  mutate(mean=(mean/effort)*1000,lcl=(lcl/effort)*1000,ucl=(ucl/effort)*1000)
+
 
 
 
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Output")
 fwrite(plotdat,"Bycatch_seabird_estimates_simple.csv")
+fwrite(ratedat,"Bycatch_rates_bootstrapped_simple.csv")
 pdf("Fig4_bycatch_difference.pdf", width=9, height=6)
 #jpeg("Fig4_bycatch_difference.jpg", quality=100)
 
@@ -372,12 +465,6 @@ ggplot(plotdat, aes(y=mean, x=x, colour=target)) + geom_point(size=2)+
         panel.border = element_blank())
 
 dev.off()
-
-
-
-
-
-
 
 
 
