@@ -12,7 +12,8 @@ library(ggplot2)
 library(data.table)
 library(tidyverse)
 library(lubridate)
-
+select<-dplyr::select
+filter<-dplyr::filter
 
 
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
@@ -108,7 +109,7 @@ for (p in power.out$samp.size){
   
   all.simul.out<-data.frame()
   
-  for(sim in 1:50){
+  for(sim in 1:100){
     
     selID<-sample(unique(greenlights$SetID),p,replace=T)
     fake_trial<-seq(1,p,1)
@@ -158,6 +159,7 @@ summary(power.out)
 ggplot(power.out, aes(y=effect.size, x=samp.size)) + geom_line(size=2)+
   geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.1)+
   geom_hline(yintercept=0) +
+  geom_vline(xintercept=min(power.out$samp.size[power.out$ucl<0]), color='red', size=1.5) +
   xlab("Sample size of paired trials") +
   ylab("Change in seabird bycatch") +
   theme(panel.background=element_rect(fill="white", colour="black"), 
