@@ -4,7 +4,7 @@
     model{
     
     # PRIORS FOR REGRESSION PARAMETERS
-    for(m in 1:5){
+    for(m in 1:5){          ## Nov, Dec, Jan, Feb, Mar
       #for(y in 1:2){
         intercept.occu[m] ~ dnorm(0, 0.5)  ## month-year-specific intercept for occurrence of bycatch
         intercept.abund[m] ~ dnorm(0, 0.5)  ## month-year-specific intercept for quantity of bycatch

@@ -1,3 +1,3 @@
 Mitigation,Response,Parameter,mean,lcl,ucl
-GreenLights,AllBirds,treatment effect on catch occurrence,0.232179409070081,-2.11310502457057,2.73772384695411
-GreenLights,AllBirds,treatment effect on catch rate,-1.58312241940393,-3.00237623325322,-0.123803536875991
+GreenLights,AllBirds,treatment effect on catch occurrence,0.255950302,-2.039559108,2.734686315
+GreenLights,AllBirds,treatment effect on catch rate,-1.585994491,-2.912541473,-0.255939909
