@@ -211,6 +211,10 @@ JAGS_dat<-list(y = BYCATCH$Total,
                  eff = as.numeric(BYCATCH$UnitEff))
 
 
+
+
+
+
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 #####     SPECIFY MODELS IN JAGS       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
 #####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~########
@@ -350,7 +354,7 @@ ggplot(parmest)+
   
   ## format axis ticks
   xlab("Parameter") +
-  scale_y_continuous(name="estimate (logit scale)", limits=c(-3.1,3), breaks=seq(-3,3,0.5)) +
+  scale_y_continuous(name="estimated effect size", limits=c(-3.1,3), breaks=seq(-3,3,0.5)) +
   
   ## beautification of the axes
   theme(panel.background=element_rect(fill="white", colour="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -364,11 +368,13 @@ ggsave("Green_LED_bycatch_parameter_estimates.jpg", height=7, width=10)
 
 
 #### PLOT SUMMARY OF ESTIMATED BYCATCH
+## THIS IS AN ORDER OF MAGNITUDE BELOW THE RAW DATA SUMMARY!
 plotdat<-data.frame(Mitigation="GreenLights",
                     Response="AllBirds",
                     Treatment=BYCATCH$Cont_Treat,
-                    mean=model$mean$phi,
-                    lcl=model$q2.5$phi,ucl=model$q97.5$phi)
+                    mean=model$mean$phi*ifelse(BYCATCH$ZeroTrips==0,1,0),
+                    lcl=model$q2.5$phi*ifelse(BYCATCH$ZeroTrips==0,1,0),ucl=model$q97.5$phi*ifelse(BYCATCH$ZeroTrips==0,1,0))
+
 plotdat %>% group_by(Mitigation,Response,Treatment) %>%
   summarise(mean=mean(mean),lcl=mean(lcl),ucl=mean(ucl)) %>%
   ggplot(aes(y=mean, x=Treatment)) + geom_point(size=2, colour="firebrick")+
@@ -388,4 +394,4 @@ plotdat %>% group_by(Mitigation,Response,Treatment) %>%
         panel.grid.minor = element_blank(), 
         panel.border = element_blank())
 
-ggsave("LED_Bird_bycatch_model_prediction.jpg", width=8, height=11)
+#ggsave("LED_Bird_bycatch_model_prediction.jpg", width=8, height=11)
