@@ -82,6 +82,9 @@ BYCATCH<-sets %>% select(-Depl_Time,-Haul_time,-Hours_deployed,-Days_deployed,-F
 setwd("C:\\STEFFEN\\RSPB\\Marine\\Bycatch\\GillnetBycatch\\Analysis\\GillnetBycatch")
 LEDs<- DATA %>% filter(Cont_Treat=="Lights19/20Green") %>% mutate(CPUE=ifelse(is.na(CPUE),0,CPUE))
 controls<- DATA %>% filter(Trip_ID %in% unique(LEDs$Trip_ID)) %>% filter(Cont_Treat=="Control") %>% mutate(CPUE=ifelse(is.na(CPUE),0,CPUE))
+range(LEDs$Depl_Date)
+range(LEDs$CPUE)
+range(controls$CPUE)
 
 ## bootstrap test of TRIP_IDs
 trip_boot<-matrix(sample(unique(LEDs$Trip_ID), size = 10000 * nrow(controls), replace = TRUE),10000, nrow(controls))
@@ -94,6 +97,20 @@ RATE_control<-data.frame(treatment="no LED",mean=mean(control.boot.statistics),
 led.boot.statistics <- apply(LED_boot, 1, mean)
 RATE_LED<-data.frame(treatment="with LED",mean=mean(led.boot.statistics),
                      lcl=quantile(led.boot.statistics,0.025),ucl=quantile(led.boot.statistics,0.975))
+
+### COMBINE DATA AND CALCULATE DIFFERENCE
+DIFFS<-DATA %>% filter(Trip_ID %in% unique(LEDs$Trip_ID)) %>% mutate(CPUE=ifelse(is.na(CPUE),0,CPUE)) %>%
+  select(Trip_ID,Depl_Date,Cont_Treat,CPUE) %>%
+  spread(key=Cont_Treat, value=CPUE) %>%
+  rename(LED=`Lights19/20Green`) %>%
+  mutate(DIFF=LED-Control)
+diff_boot<-matrix(DIFFS$DIFF[match(trip_boot,DIFFS$Trip_ID)],10000, nrow(DIFFS))
+diff.boot.statistics <- apply(diff_boot, 1, mean)
+RATE_DIFF<-data.frame(treatment="DIFFERENCE",mean=mean(diff.boot.statistics),
+                         lcl=quantile(diff.boot.statistics,0.025),ucl=quantile(diff.boot.statistics,0.975))
+RATE_DIFF
+
+FISH_DIFF<-(RATE_DIFF[,2:4]/RATE_control[,2:4])*100
 
 
 ### PLOT predicted OUTPUT ###
@@ -129,6 +146,10 @@ ggsave("LED_Fishcatch_bootstrap_summary.jpg", width=8, height=11)
 LEDs<- BYCATCH %>% filter(Cont_Treat=="Lights19/20Green") %>% mutate(BPUE=ifelse(is.na(BPUE),0,BPUE))
 controls<- BYCATCH %>% filter(Trip_ID %in% unique(LEDs$Trip_ID)) %>% filter(Cont_Treat=="Control") %>% mutate(BPUE=ifelse(is.na(BPUE),0,BPUE))
 
+range(LEDs$BPUE)
+range(controls$BPUE)
+
+
 ## bootstrap test of TRIP_IDs
 trip_boot<-matrix(sample(unique(LEDs$Trip_ID), size = 10000 * nrow(controls), replace = TRUE),10000, nrow(controls))
 control_boot<-matrix(controls$BPUE[match(trip_boot,controls$Trip_ID)],10000, nrow(controls))
@@ -140,6 +161,22 @@ RATE_control<-data.frame(treatment="no LED",mean=mean(control.boot.statistics),
 led.boot.statistics <- apply(LED_boot, 1, mean)
 RATE_LED<-data.frame(treatment="with LED",mean=mean(led.boot.statistics),
                      lcl=quantile(led.boot.statistics,0.025),ucl=quantile(led.boot.statistics,0.975))
+
+
+### COMBINE DATA AND CALCULATE DIFFERENCE
+DIFFS<-BYCATCH %>% filter(Trip_ID %in% unique(LEDs$Trip_ID)) %>% mutate(BPUE=ifelse(is.na(BPUE),0,BPUE)) %>%
+  select(Trip_ID,Depl_Date,Cont_Treat,BPUE) %>%
+  spread(key=Cont_Treat, value=BPUE) %>%
+  rename(LED=`Lights19/20Green`) %>%
+  mutate(DIFF=LED-Control)
+diff_boot<-matrix(DIFFS$DIFF[match(trip_boot,DIFFS$Trip_ID)],10000, nrow(DIFFS))
+diff.boot.statistics <- apply(diff_boot, 1, mean)
+RATE_DIFF<-data.frame(treatment="DIFFERENCE",mean=mean(diff.boot.statistics),
+                      lcl=quantile(diff.boot.statistics,0.025),ucl=quantile(diff.boot.statistics,0.975))
+RATE_DIFF
+
+BIRD_DIFF<-(RATE_DIFF[,2:4]/RATE_control[,2:4])*100
+
 
 
 ### PLOT predicted OUTPUT ###
@@ -162,7 +199,34 @@ bind_rows(RATE_control,RATE_LED) %>%
         panel.grid.minor = element_blank(), 
         panel.border = element_blank())
 
-ggsave("LED_Bird_bycatch_bootstrap_summary.jpg", width=8, height=11)
+
+### PLOT COMBINED PROPORTIONAL REDUCTION IN CATCH ###
+## needs a fudge because the potential reduction in seabird bycatch is so huge
+
+bind_rows(BIRD_DIFF,FISH_DIFF) %>% mutate(metric=c("Seabird bycatch", "Fish catch")) %>%
+  mutate(lcl=if_else(lcl<(-200),-120,lcl)) %>%
+  ggplot(aes(y=mean, x=metric)) + geom_point(size=2, colour="firebrick")+
+  geom_errorbar(aes(ymin=lcl, ymax=ucl), width=.03)+
+  geom_hline(aes(yintercept=0), linetype='longdash', colour='grey54')+
+  scale_y_continuous(limits=c(-120,20), breaks=seq(-120,20,20), labels=c(-1357,seq(-100,20,20))) +
+  xlab("") +
+  ylab("Difference (%) of catch in LED vs. control net") +
+  theme(panel.background=element_rect(fill="white", colour="black"), 
+        axis.text=element_text(size=16, color="black"), 
+        axis.title=element_text(size=18), 
+        strip.text=element_text(size=18, color="black"),
+        legend.text=element_text(size=14, color="black"),
+        legend.title=element_text(size=18, color="black"),
+        legend.key=element_blank(),
+        strip.background=element_rect(fill="white", colour="black"), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.border = element_blank())
+
+
+
+
+
 
 
 
@@ -337,7 +401,7 @@ abline(0,1,col='red')
 #### ASSEMBLE SUMMARY OF PARAMETER ESTIMATES
 parmest<-data.frame(Mitigation="GreenLights",
                       Response="AllBirds",
-                      Parameter=c("treatment effect on catch occurrence","treatment effect on catch rate"),
+                      Parameter=c("LED effect on catch occurrence","LED effect on catch rate"),
                       mean=NA,lcl=NA,ucl=NA)
 for (l in 1:2){
     parmest[l,4:6]<-c(model$mean[[l]],model$q2.5[[l]],model$q97.5[[l]])
@@ -348,12 +412,12 @@ parmest
 ### PLOT PARAMETERS ON LOGIT SCALE
 fwrite(parmest,"Green_LED_bycatch_parameter_estimates.csv")
 ggplot(parmest)+
-  geom_point(aes(x=Parameter, y=mean))+
-  geom_errorbar(aes(x=Parameter, ymin=lcl, ymax=ucl), width=.1) +
-  geom_hline(aes(yintercept=0), colour="darkgrey") +
-  
+  geom_point(aes(x=Parameter, y=mean),size=2, colour="firebrick")+
+  geom_errorbar(aes(x=Parameter, ymin=lcl, ymax=ucl), width=.03)+
+  geom_hline(aes(yintercept=0), linetype='longdash', colour='grey54')+
+
   ## format axis ticks
-  xlab("Parameter") +
+  xlab("") +
   scale_y_continuous(name="estimated effect size", limits=c(-3.1,3), breaks=seq(-3,3,0.5)) +
   
   ## beautification of the axes
@@ -368,12 +432,12 @@ ggsave("Green_LED_bycatch_parameter_estimates.jpg", height=7, width=10)
 
 
 #### PLOT SUMMARY OF ESTIMATED BYCATCH
-## THIS IS AN ORDER OF MAGNITUDE BELOW THE RAW DATA SUMMARY!
+## THIS IS AN ORDER OF MAGNITUDE BELOW THE RAW DATA SUMMARY - NEED TO FACTOR IN LOG TRANSFORMATION?
 plotdat<-data.frame(Mitigation="GreenLights",
                     Response="AllBirds",
                     Treatment=BYCATCH$Cont_Treat,
-                    mean=model$mean$phi*ifelse(BYCATCH$ZeroTrips==0,1,0),
-                    lcl=model$q2.5$phi*ifelse(BYCATCH$ZeroTrips==0,1,0),ucl=model$q97.5$phi*ifelse(BYCATCH$ZeroTrips==0,1,0))
+                    mean=model$mean$phi,
+                    lcl=model$q2.5$phi,ucl=model$q97.5$phi)
 
 plotdat %>% group_by(Mitigation,Response,Treatment) %>%
   summarise(mean=mean(mean),lcl=mean(lcl),ucl=mean(ucl)) %>%
@@ -395,3 +459,16 @@ plotdat %>% group_by(Mitigation,Response,Treatment) %>%
         panel.border = element_blank())
 
 #ggsave("LED_Bird_bycatch_model_prediction.jpg", width=8, height=11)
+
+
+### CALCULATE PERCENT REDUCTION #
+
+plotdat %>% mutate(tripID=tripID) %>% group_by(tripID) %>%
+  select(tripID,Treatment,mean,lcl,ucl) %>%
+  gather(key='metric',value='value',-Treatment,-tripID) %>%
+  spread(key=Treatment,value=value) %>%
+  rename(LED=`Lights19/20Green`) %>%
+  mutate(diff=LED-Control, prop_diff=((LED-Control)/max(0.001,Control))*100) %>%
+  group_by(metric) %>%
+  summarise(diff_mean=mean(diff),prop_diff=mean(prop_diff))
+  
